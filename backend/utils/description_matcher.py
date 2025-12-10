@@ -20,6 +20,9 @@ class DescriptionMatcher:
     
     def normalize_text(self, text: str) -> str:
         '''Normalize text for comparison'''
+        # Handle None or empty values
+        if not text or not isinstance(text, str):
+            return ''
         text = text.upper().strip()
         text = re.sub(r'\s+', ' ', text)
         text = re.sub(r'[^\w\s]', '', text)
@@ -76,6 +79,12 @@ class DescriptionMatcher:
         Match LC description with Invoice description
         Article 18: Must correspond exactly
         '''
+        # Handle None or empty values
+        if not lc_description or not isinstance(lc_description, str):
+            lc_description = 'N/A'
+        if not invoice_description or not isinstance(invoice_description, str):
+            invoice_description = 'N/A'
+        
         issues = []
         
         word_order_match, order_msg = self.check_word_order(lc_description, invoice_description)

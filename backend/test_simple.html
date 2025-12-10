@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        textarea { width: 100%; height: 100px; }
+        button { padding: 10px 20px; margin: 10px 0; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Simple Advanced Audit Test</h1>
+    
+    <h2>Test 1: Health Check</h2>
+    <button onclick="testHealth()">Check Backend Health</button>
+    <div id="health" class="result"></div>
+    
+    <h2>Test 2: Advanced Audit</h2>
+    <textarea id="lcText" placeholder="Paste LC...">LETTER OF CREDIT
+LC Number: LC-2025-001
+Benificiary: Test Company
+Applicant: Buyer Inc
+Amount: USD 50000
+Currency: USD
+Description of Goods: 1000 KGS TEA
+Latest Shipment Date: 31-12-2025
+Expiry Date: 31-01-2026</textarea>
+    
+    <textarea id="invoiceText" placeholder="Paste Invoice...">COMMERCIAL INVOICE
+Invoice Number: INV-2025-001
+Invoice Date: 15-12-2025
+Issuer: Test Company
+Buyer: Buyer Inc
+Description of Goods: 1000 KGS TEA
+Quantity: 1000 KGS
+Unit Price: USD 50
+Total Amount: USD 50000
+Shipment Date: 10-12-2025</textarea>
+    
+    <button onclick="testAudit()">Run Audit</button>
+    <div id="audit" class="result"></div>
+    
+    <script>
+        async function testHealth() {
+            const div = document.getElementById('health');
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                div.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                div.style.background = '#90EE90';
+            } catch (e) {
+                div.innerHTML = 'ERROR: ' + e.message;
+                div.style.background = '#FFB6C6';
+            }
+        }
+        
+        async function testAudit() {
+            const div = document.getElementById('audit');
+            const lc = document.getElementById('lcText').value;
+            const invoice = document.getElementById('invoiceText').value;
+            
+            div.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/audit/advanced', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lc_text: lc, invoice_text: invoice })
+                });
+                
+                const data = await response.json();
+                
+                let html = '';
+                html += '<h3>Audit Summary</h3>';
+                html += '<p><strong>Summary:</strong> ' + (data.audit_summary || 'N/A') + '</p>';
+                html += '<p><strong>Risk Score:</strong> ' + (data.risk_score !== undefined ? data.risk_score : 'N/A') + '/100</p>';
+                html += '<p><strong>Total Discrepancies:</strong> ' + (data.total_discrepancies || 0) + '</p>';
+                html += '<p><strong>Critical:</strong> ' + (data.critical_count || 0) + '</p>';
+                html += '<p><strong>Major:</strong> ' + (data.major_count || 0) + '</p>';
+                html += '<p><strong>Minor:</strong> ' + (data.minor_count || 0) + '</p>';
+                
+                if (data.discrepancies && data.discrepancies.length > 0) {
+                    html += '<h3>Discrepancies Found:</h3>';
+                    data.discrepancies.forEach((d, i) => {
+                        html += '<div style="border: 1px solid #999; padding: 10px; margin: 5px 0;">';
+                        html += '<p><strong>' + (i+1) + '. [' + d.severity + '] ' + d.category + '</strong></p>';
+                        html += '<p>Field: ' + d.field + '</p>';
+                        html += '<p>Fix: ' + d.suggested_fix + '</p>';
+                        html += '</div>';
+                    });
+                }
+                
+                if (data.corrected_lc) {
+                    html += '<h3>Corrected LC Available</h3>';
+                    html += '<p style="color: green;">Download button should appear!</p>';
+                }
+                
+                div.innerHTML = html;
+                div.style.background = '#E0F0FF';
+            } catch (e) {
+                div.innerHTML = 'ERROR: ' + e.message + '<br><br>Make sure backend is running on port 8000';
+                div.style.background = '#FFB6C6';
+            }
+        }
+        
+        // Auto test on load
+        window.addEventListener('load', testHealth);
+    </script>
+</body>
+</html>
