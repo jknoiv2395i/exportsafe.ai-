@@ -1,87 +1,7 @@
-<<<<<<< HEAD
-﻿import 'package:flutter/material.dart';
-import 'package:exportsafe_ai/data/datasources/remote/api_service.dart';
-import 'package:exportsafe_ai/data/models/audit_report.dart';
-import 'package:file_picker/file_picker.dart';
-
-class AuditProvider extends ChangeNotifier {
-  PlatformFile? lcFile;
-  PlatformFile? invoiceFile;
-  bool isLoading = false;
-  AuditReport? auditResult;
-  String? errorMessage;
-
-  void setLcFile(dynamic file) {
-    if (file is PlatformFile) {
-      lcFile = file;
-    } else if (file.runtimeType.toString().contains('XFile')) {
-      // Handle XFile from file_picker
-      lcFile = PlatformFile(
-        name: file.name ?? 'document',
-        size: 0,
-        path: file.path,
-      );
-    }
-    notifyListeners();
-  }
-
-  void setInvoiceFile(dynamic file) {
-    if (file is PlatformFile) {
-      invoiceFile = file;
-    } else if (file.runtimeType.toString().contains('XFile')) {
-      // Handle XFile from file_picker
-      invoiceFile = PlatformFile(
-        name: file.name ?? 'document',
-        size: 0,
-        path: file.path,
-      );
-    }
-    notifyListeners();
-  }
-
-  bool get canRunAnalysis => lcFile != null && invoiceFile != null;
-
-  Future<AuditReport?> runAudit() async {
-    if (!canRunAnalysis) return null;
-
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners();
-
-    try {
-      final apiService = ApiService();
-      final result = await apiService.auditDocuments(
-        lcFile: lcFile!,
-        invoiceFile: invoiceFile!,
-      );
-
-      auditResult = result;
-      isLoading = false;
-      notifyListeners();
-      return result;
-    } catch (e) {
-      errorMessage = e.toString();
-      isLoading = false;
-      notifyListeners();
-      return null;
-    }
-  }
-
-  void reset() {
-    lcFile = null;
-    invoiceFile = null;
-    auditResult = null;
-    errorMessage = null;
-    isLoading = false;
-    notifyListeners();
-  }
-=======
 import 'package:flutter/material.dart'; // Needed for BuildContext
 import 'package:go_router/go_router.dart'; // Needed for context.push
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../data/datasources/remote/api_service.dart';
 import '../../../data/models/audit_report.dart';
 
@@ -99,7 +19,6 @@ class AuditProvider with ChangeNotifier {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'png'],
-        withData: true, // Needed for Web to get bytes
       );
 
       if (result != null) {
@@ -118,7 +37,6 @@ class AuditProvider with ChangeNotifier {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'png'],
-        withData: true, // Needed for Web to get bytes
       );
 
       if (result != null) {
@@ -194,28 +112,4 @@ class AuditProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
-  void mockSuccess(BuildContext context) {
-    currentReport = AuditReport(
-      status: 'FAIL',
-      riskScore: 85,
-      discrepancies: [
-        Discrepancy(
-          field: 'Beneficiary Name',
-          lcValue: 'ExportSafe AI Ltd.',
-          invValue: 'Export Safe AI Limited',
-          reason: 'Name mismatch (Spelling)',
-        ),
-        Discrepancy(
-          field: 'Amount',
-          lcValue: 'USD 50,000.00',
-          invValue: 'USD 50,500.00',
-          reason: 'Over-shipment not allowed by LC',
-        ),
-      ],
-    );
-    notifyListeners();
-    context.push('/report/new_audit');
-  }
->>>>>>> a8c3d2ef8c6c477dae116be93ab5c7faa818f325
 }
