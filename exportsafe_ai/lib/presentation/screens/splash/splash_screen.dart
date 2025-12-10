@@ -20,7 +20,8 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       // Navigate to login or dashboard based on auth state
       // For now, we'll go to the initial route defined in router
-      context.go('/login'); 
+      // Navigate to onboarding for first-time flow
+      context.go('/onboarding');
     }
   }
 

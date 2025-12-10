@@ -1,253 +1,301 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
+import 'dart:math' as math;
 import '../../../core/theme/app_theme.dart';
 import '../../providers/audit_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
-class UploadScreen extends StatefulWidget {
+class UploadScreen extends StatelessWidget {
   const UploadScreen({super.key});
-
-  @override
-  State<UploadScreen> createState() => _UploadScreenState();
-}
-
-class _UploadScreenState extends State<UploadScreen> {
-  int _selectedIndex = -1; // -1: None, 0: Upload, 1: Camera
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AuditProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Colors from design
-    const primaryColor = Color(0xFFFF3D3D);
-    final backgroundColor = isDark ? const Color(0xFF230F0F) : const Color(0xFFF8F5F5);
-    final cardColor = isDark ? const Color(0xFF230F0F).withOpacity(0.5) : Colors.white;
-    final borderColor = isDark ? Colors.grey[700]! : Colors.grey[200]!;
+
+    // Design Colors
+    final bgColor = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final primaryColor = const Color(0xFFFF3B3B);
     final textColor = isDark ? Colors.white : const Color(0xFF333333);
-    final subTextColor = isDark ? Colors.grey[400]! : Colors.grey[500]!;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Stack(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: bgColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
+        ),
+        title: Text(
+          'Upload Documents',
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
         children: [
-          // Background Gradient
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.05),
-                    Colors.transparent,
-                  ],
-                  radius: 0.5,
-                ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  // 1. Letter of Credit Card
+                  _UploadCard(
+                    title: 'Letter of Credit',
+                    subtitle: 'Tap to upload your document',
+                    icon: Icons.account_balance_outlined,
+                    onTap: provider.pickLcFile,
+                    file: provider.lcFile,
+                    primaryColor: primaryColor,
+                    isDark: isDark,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 2. Commercial Invoice Card
+                  _UploadCard(
+                    title: 'Commercial Invoice',
+                    subtitle: 'Tap to upload your document',
+                    icon: Icons.description_outlined,
+                    onTap: provider.pickInvoiceFile,
+                    file: provider.invoiceFile,
+                    primaryColor: primaryColor,
+                    isDark: isDark,
+                  ),
+                ],
               ),
             ),
           ),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // Top App Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/dashboard');
-                          }
-                        },
-                        icon: Icon(Icons.arrow_back_ios_new, color: textColor),
-                      ),
-                      Text(
-                        'Scan Letter of Credit',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(width: 48), // Spacer
-                    ],
+          // Analyze Button
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: bgColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: provider.canRunAnalysis
+                    ? () => provider.runAnalysis(context)
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                  disabledForegroundColor: Colors.grey[500],
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-
-                // Main Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Selection Grid
-                        _buildSelectionCard(
-                          index: 0,
-                          icon: Icons.upload_file,
-                          title: 'Upload Document',
-                          subtitle: 'Select a file from your device',
-                          isSelected: _selectedIndex == 0,
-                          primaryColor: primaryColor,
-                          cardColor: cardColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildSelectionCard(
-                          index: 1,
-                          icon: Icons.photo_camera,
-                          title: 'Scan with Camera',
-                          subtitle: "Use your phone's camera to scan",
-                          isSelected: _selectedIndex == 1,
-                          primaryColor: primaryColor,
-                          cardColor: cardColor,
-                          borderColor: borderColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                        ),
-
-                        const SizedBox(height: 24),
-                        
-                        // Meta Text
-                        Text(
-                          'Supported formats: PDF, JPG, PNG. Max file size: 10MB.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: subTextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Bottom Button
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _selectedIndex != -1
-                          ? () {
-                              if (_selectedIndex == 0) {
-                                provider.pickLcFile();
-                              } else {
-                                // For now, handle camera same as file picker or show message
-                                provider.pickLcFile(); 
-                              }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                        disabledBackgroundColor: primaryColor.withOpacity(0.5),
-                      ),
-                      child: const Text(
-                        'Proceed to Scan',
+                child: provider.isProcessing
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Analyze Documents',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                // Space for Bottom Navigation Bar (handled by ShellRoute, but adding padding just in case)
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
           ),
+          
+          // Debug Button (Temporary)
+          TextButton(
+             onPressed: () {
+               provider.mockSuccess(context);
+             },
+             child: const Text("Debug: Force Success", style: TextStyle(color: Colors.grey)),
+          ),
+
+          // Spacer for Bottom Nav Dock
+          const SizedBox(height: 80), 
         ],
       ),
     );
   }
+}
 
-  Widget _buildSelectionCard({
-    required int index,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool isSelected,
-    required Color primaryColor,
-    required Color cardColor,
-    required Color borderColor,
-    required Color textColor,
-    required Color subTextColor,
-  }) {
+class _UploadCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+  final PlatformFile? file;
+  final Color primaryColor;
+  final bool isDark;
+
+  const _UploadCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    required this.file,
+    required this.primaryColor,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Styling constants
+    final bool isFileSelected = file != null;
+    final dashColor = primaryColor;
+    final cardBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF9F9F9);
+    final textColor = isDark ? Colors.white : const Color(0xFF2D3748);
+    final subTextColor = isDark ? Colors.grey[400] : const Color(0xFF718096);
+
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? primaryColor : borderColor,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            if (isSelected)
-              BoxShadow(
-                color: primaryColor.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-          ],
+      onTap: onTap,
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: dashColor,
+          strokeWidth: 1.5,
+          gap: 6,
+          radius: 20,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: primaryColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: textColor,
+        child: Container(
+          width: double.infinity,
+          height: 220, // Fixed height for consistency
+          decoration: BoxDecoration(
+            color: isFileSelected ? primaryColor.withOpacity(0.05) : cardBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon Container
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: isFileSelected ? Colors.white : (isDark ? Colors.black26 : Colors.white),
+                  borderRadius: BorderRadius.circular(12), // Slightly soft square
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  isFileSelected ? Icons.check_circle : icon,
+                  size: 40,
+                  color: isFileSelected ? Colors.green : const Color(0xFF2D3748), // Dark grey icon
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: subTextColor,
+              const SizedBox(height: 24),
+              // Title
+              Text(
+                isFileSelected ? file!.name : title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              // Subtitle
+              if (!isFileSelected)
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: subTextColor,
+                  ),
+                )
+              else
+                 Text(
+                  "${(file!.size / 1024).toStringAsFixed(1)} KB",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: subTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double gap;
+  final double radius;
+
+  _DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.0,
+    this.gap = 5.0,
+    this.radius = 0.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    Path path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ));
+
+    Path dashedPath = Path();
+    double dashWidth = 10.0;
+    double dashSpace = gap;
+    double distance = 0.0;
+
+    for (PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashedPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
+
+    canvas.drawPath(dashedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -116,4 +116,27 @@ class AuditProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void mockSuccess(BuildContext context) {
+    currentReport = AuditReport(
+      status: 'FAIL',
+      riskScore: 85,
+      discrepancies: [
+        Discrepancy(
+          field: 'Beneficiary Name',
+          lcValue: 'ExportSafe AI Ltd.',
+          invValue: 'Export Safe AI Limited',
+          reason: 'Name mismatch (Spelling)',
+        ),
+        Discrepancy(
+          field: 'Amount',
+          lcValue: 'USD 50,000.00',
+          invValue: 'USD 50,500.00',
+          reason: 'Over-shipment not allowed by LC',
+        ),
+      ],
+    );
+    notifyListeners();
+    context.push('/report/new_audit');
+  }
 }

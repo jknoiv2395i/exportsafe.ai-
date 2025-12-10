@@ -143,8 +143,47 @@ async def audit_documents(
         
         if gemini_model:
             prompt = f"{JOHNSON_SYSTEM_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
-            response = gemini_model.generate_content(prompt)
-            response_text = response.text
+            
+            # Retry Loop with Fallback
+            models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash']
+            response_text = ""
+            
+            import time
+            
+            for model_name in models_to_try:
+                try:
+                    print(f"Trying AI Model: {model_name}...")
+                    current_model = genai.GenerativeModel(model_name)
+                    response = current_model.generate_content(prompt)
+                    response_text = response.text
+                    break # Success!
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "quota" in error_str or "429" in error_str or "resource exhausted" in error_str:
+                        print(f"Quota hit for {model_name}. Switching/Retrying...")
+                        time.sleep(2) # Short wait before fallback
+                        continue
+                    else:
+                        print(f"Error with {model_name}: {e}")
+                        # If it's not a quota error, it might be a model error, try next.
+                        continue
+            
+            if not response_text:
+                 # Ensure we have a valid fallback if all AI calls fail
+                 print("All AI models failed or quota exhausted.")
+                 return {
+                    "status": "FAIL",
+                    "risk_score": 50,
+                    "discrepancies": [
+                        {
+                            "field": "System",
+                            "lc_value": "N/A",
+                            "inv_value": "N/A",
+                            "reason": "AI Service Busy (Quota Exceeded). Please try again in 30 seconds."
+                        }
+                    ]
+                }
+
         else:
              # Mock response for testing without API key
              return {

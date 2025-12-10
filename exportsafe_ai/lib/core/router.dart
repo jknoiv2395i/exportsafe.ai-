@@ -6,9 +6,12 @@ import '../presentation/screens/dashboard/dashboard_screen.dart';
 import '../presentation/screens/audit/upload_screen.dart';
 import '../presentation/screens/audit/report_screen.dart';
 import '../presentation/screens/audit/write_lc_screen.dart';
+import '../presentation/screens/settings/settings_screen.dart';
+import '../presentation/screens/profile/profile_screen.dart';
 import '../presentation/widgets/main_layout.dart';
 
 import '../presentation/screens/splash/splash_screen.dart';
+import '../presentation/screens/onboarding/onboarding_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/splash',
@@ -29,6 +32,10 @@ final router = GoRouter(
       path: '/signup',
       builder: (context, state) => const SignupScreen(),
     ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     ShellRoute(
       builder: (context, state, child) {
         return MainLayout(child: child);
@@ -46,6 +53,10 @@ final router = GoRouter(
           path: '/write-lc',
           builder: (context, state) => const WriteLCScreen(),
         ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
       ],
     ),
     GoRoute(
@@ -54,6 +65,10 @@ final router = GoRouter(
         final auditId = state.pathParameters['auditId']!;
         return ReportScreen(auditId: auditId);
       },
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

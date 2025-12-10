@@ -1,612 +1,493 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../providers/dashboard_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Colors from the design
     const primaryColor = Color(0xFFFF3B3B);
-    const backgroundLight = Color(0xFFF7F8FC);
-    const textDark = Color(0xFF1F2937);
-    const textMuted = Color(0xFF6B7280);
-    const borderLight = Color(0xFFE5E7EB);
+    const backgroundColor = Color(0xFFF5F5F7); // Off-white background
+    const textDark = Color(0xFF1D1D1F);
+    const textMuted = Color(0xFF86868B);
 
     return Scaffold(
-      backgroundColor: backgroundLight,
+      backgroundColor: backgroundColor,
       body: Stack(
         children: [
-          // Background Glows (Soft Radial Gradients)
+          // 1. Red Gradient Header Background
+          Container(
+            height: 280,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFF3B3B), Color(0xFFFF6B6B)],
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(36),
+                bottomRight: Radius.circular(36),
+              ),
+            ),
+          ),
+          // Decorative Circles
           Positioned(
-            top: -150,
-            left: -150,
+            top: -50,
+            right: -50,
             child: Container(
-              width: 500,
-              height: 500,
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                  radius: 0.5,
-                ),
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
             ),
           ),
           Positioned(
-            bottom: -150,
-            right: -150,
+            top: 40,
+            left: -40,
             child: Container(
-              width: 500,
-              height: 500,
+              width: 150,
+              height: 150,
               decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                  radius: 0.5,
-                ),
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
             ),
           ),
 
-          // Header Background
-          Container(
-            height: 200, // Adjust height as needed
-            decoration: const BoxDecoration(
-              color: primaryColor,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
-            ),
-          ),
-          
-          // Main Content
+          // 2. Main Content
           SafeArea(
-            child: Column(
-              children: [
-                // Header Content
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-                  child: Row(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   // Header Row (White Text)
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
+                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person,
-                              color: primaryColor,
-                              size: 28,
+                          Text(
+                            'Good Morning,',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome Back',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const Text(
-                                'Alex Doe',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                          const Text(
+                            'Alex Doe',
+                            style: TextStyle(
+                              fontSize: 28,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                         ],
                       ),
-                      Stack(
+                      Row(
                         children: [
-                          const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              width: 10,
-                              height: 10,
+                          IconButton(
+                            onPressed: () => context.push('/settings'),
+                            icon: Container(
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Colors.white.withOpacity(0.2),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: primaryColor, width: 2),
                               ),
+                              child: const Icon(Icons.settings_outlined, color: Colors.white),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Notification Bell
+                          Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber, // Amber for contrast on red? Or just white border
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.red, width: 2),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
 
-                // Scrollable Body
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
+                  const SizedBox(height: 32),
+
+                  // Bento Grid (Row 1)
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Risk Meter Card
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: const [
-                                  Text(
-                                    'Risk Meter',
-                                    style: TextStyle(
-                                      color: textDark,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    '75%',
-                                    style: TextStyle(
-                                      color: primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Current Export Risk: High',
-                                style: TextStyle(
-                                  color: textMuted,
-                                  fontSize: 12,
+                        // Large Risk Card
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(32),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: LinearProgressIndicator(
-                                  value: 0.75,
-                                  backgroundColor: Colors.grey[200],
-                                  color: primaryColor,
-                                  minHeight: 8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Stats Grid
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: IntrinsicHeight(
-                            child: Row(
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Money Saved
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Money Saved',
-                                          style: TextStyle(
-                                            color: textDark,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        const Text(
-                                          '₹50,000',
-                                          style: TextStyle(
-                                            color: textDark,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.topRight,
-                                          child: Container(
-                                            width: 24,
-                                            height: 24,
-                                            decoration: const BoxDecoration(
-                                              color: primaryColor,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.currency_rupee,
-                                              color: Colors.white,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.security, color: primaryColor),
                                     ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange[50],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'High Risk',
+                                        style: TextStyle(
+                                          color: Colors.orange[800],
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                Center(
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 100,
+                                        height: 100,
+                                        child: CircularProgressIndicator(
+                                          value: 0.75,
+                                          strokeWidth: 12,
+                                          backgroundColor: Colors.grey[100],
+                                          color: primaryColor,
+                                          strokeCap: StrokeCap.round,
+                                        ),
+                                      ),
+                                      const Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '75%',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: textDark,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                // Divider
-                                VerticalDivider(
-                                  color: primaryColor.withOpacity(0.5),
-                                  width: 1,
-                                  indent: 16,
-                                  endIndent: 16,
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Risk Analysis',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textDark,
+                                  ),
                                 ),
-                                // Pending Audits
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Pending Audits',
-                                          style: TextStyle(
-                                            color: textDark,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        const Text(
-                                          '3',
-                                          style: TextStyle(
-                                            color: textDark,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'View All',
-                                              style: TextStyle(
-                                                color: primaryColor,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            Container(
-                                              width: 24,
-                                              height: 24,
-                                              decoration: const BoxDecoration(
-                                                color: primaryColor,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.description,
-                                                color: Colors.white,
-                                                size: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                 Text(
+                                  'Action required.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: textMuted,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Recent Transactions
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(width: 16),
+                        // Stats Column
+                        Expanded(
+                          flex: 2,
                           child: Column(
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: const [
-                                  Text(
-                                    'Recent Transactions',
-                                    style: TextStyle(
-                                      color: textDark,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
+                              // Money Saved Tile
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(32),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 24,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'See All',
-                                    style: TextStyle(
-                                      color: primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Icon(Icons.savings_outlined, color: textDark, size: 28),
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF34C759),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        'Saved',
+                                        style: TextStyle(
+                                          color: textMuted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const Text(
+                                        '₹50k',
+                                        style: TextStyle(
+                                          color: textDark,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                              const SizedBox(height: 12),
-                              _buildTransactionItem(
-                                'Export to Germany',
-                                'Dec 2, 2023',
-                                '+₹12,500',
-                                Colors.green[600]!,
-                                borderLight,
-                              ),
-                              _buildTransactionItem(
-                                'Import from China',
-                                'Nov 28, 2023',
-                                '-₹8,200',
-                                Colors.red[600]!,
-                                borderLight,
-                              ),
-                              _buildTransactionItem(
-                                'Export to USA',
-                                'Nov 25, 2023',
-                                '+₹20,000',
-                                Colors.green[600]!,
-                                Colors.transparent, // No border for last item
+                              const SizedBox(height: 16),
+                              // Pending Audits Tile
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(32),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 24,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Icon(Icons.pending_actions_outlined, color: textDark, size: 28),
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: primaryColor,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        'Pending',
+                                        style: TextStyle(
+                                          color: textMuted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const Text(
+                                        '3 Audits',
+                                        style: TextStyle(
+                                          color: textDark,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Upcoming Shipments
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: const [
-                                  Text(
-                                    'Upcoming Shipments',
-                                    style: TextStyle(
-                                      color: textDark,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Manage',
-                                    style: TextStyle(
-                                      color: primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              _buildShipmentItem(
-                                'Container #SHP789',
-                                'Arriving Jan 15, 2024',
-                                'In Transit',
-                                Colors.blue[100]!,
-                                Colors.blue[800]!,
-                                borderLight,
-                              ),
-                              _buildShipmentItem(
-                                'Pallet #PLT123',
-                                'Scheduled Jan 20, 2024',
-                                'Scheduled',
-                                Colors.yellow[100]!,
-                                Colors.yellow[800]!,
-                                Colors.transparent,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 100), // Space for FAB
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 16),
+
+                  // 3. Upcoming Shipments
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                         BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Upcoming Shipments',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textDark,
+                              ),
+                            ),
+                            Text(
+                              'Manage',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        _buildMinimalShipmentItem(
+                          icon: Icons.local_shipping_outlined,
+                          title: 'Container #SHP789',
+                          subtitle: 'Arriving Jan 15, 2024',
+                          status: 'In Transit',
+                          statusColor: Colors.blue,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildMinimalShipmentItem(
+                          icon: Icons.inventory_2_outlined,
+                          title: 'Pallet #PLT123',
+                          subtitle: 'Scheduled Jan 20, 2024',
+                          status: 'Scheduled',
+                          statusColor: Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 100), // FAB space
+                ],
+              ),
             ),
           ),
         ],
       ),
-      floatingActionButton: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withOpacity(0.25),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-             context.push('/audit');
-          },
-          backgroundColor: Colors.white,
-          elevation: 0,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.qr_code_scanner,
-            color: primaryColor,
-            size: 32,
-          ),
-        ),
-      ),
     );
   }
 
-  Widget _buildTransactionItem(
-    String title,
-    String date,
-    String amount,
-    Color amountColor,
-    Color borderColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: borderColor),
+  Widget _buildMinimalShipmentItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String status,
+    required MaterialColor statusColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F7), // Clean background
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(icon, color: Colors.black54),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: Color(0xFF1D1D1F),
                 ),
               ),
               Text(
-                date,
+                subtitle,
                 style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
+                  fontSize: 13,
+                  color: Color(0xFF86868B),
                 ),
               ),
             ],
           ),
-          Text(
-            amount,
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: statusColor[50],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            status,
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: amountColor,
+              fontSize: 12,
+              color: statusColor[800],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShipmentItem(
-    String title,
-    String date,
-    String status,
-    Color statusBgColor,
-    Color statusTextColor,
-    Color borderColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: borderColor),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              Text(
-                date,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: statusBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusTextColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
