@@ -12,10 +12,19 @@ import '../presentation/widgets/main_layout.dart';
 
 import '../presentation/screens/splash/splash_screen.dart';
 import '../presentation/screens/onboarding/onboarding_screen.dart';
+import '../presentation/screens/audit/processing_screen.dart';
+import '../presentation/screens/audit/view_lc_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/view-lc',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        return ViewLCScreen(data: data);
+      },
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashScreen(),
@@ -65,6 +74,10 @@ final router = GoRouter(
         final auditId = state.pathParameters['auditId']!;
         return ReportScreen(auditId: auditId);
       },
+    ),
+    GoRoute(
+      path: '/processing',
+      builder: (context, state) => const ProcessingScreen(),
     ),
     GoRoute(
       path: '/settings',

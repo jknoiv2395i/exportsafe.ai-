@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart'; // Needed for BuildContext
 import 'package:go_router/go_router.dart'; // Needed for context.push
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
@@ -67,46 +68,47 @@ class AuditProvider with ChangeNotifier {
     isProcessing = true;
     notifyListeners();
 
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    // Navigate to processing screen instead of dialog
+    if (context.mounted) {
+      context.push('/processing');
+    }
 
     try {
+      // Run analysis (no artificial delay needed, UI handles it)
       currentReport = await _apiService.auditDocuments(lcFile!, invoiceFile!);
       
-      // Save to Firestore
+      // Save to Firestore (only if Firebase is initialized)
       try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          await FirebaseFirestore.instance.collection('audits').add({
-            'userId': user.uid,
-            'createdAt': FieldValue.serverTimestamp(),
-            'status': currentReport!.status,
-            'riskScore': currentReport!.riskScore,
-            'lcFileName': lcFile!.name,
-            'invoiceFileName': invoiceFile!.name,
-            // Add other fields as needed
-          });
+        if (Firebase.apps.isNotEmpty) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            await FirebaseFirestore.instance.collection('audits').add({
+              'userId': user.uid,
+              'createdAt': FieldValue.serverTimestamp(),
+              'status': currentReport!.status,
+              'riskScore': currentReport!.riskScore,
+              'lcFileName': lcFile!.name,
+              'invoiceFileName': invoiceFile!.name,
+            });
+          }
+        } else {
+             if (kDebugMode) {
+               print('Firebase not initialized - skipping Firestore save');
+             }
         }
       } catch (e) {
         if (kDebugMode) {
           print('Error saving to Firestore: $e');
         }
       }
+      
+      // Note: We do NOT navigate here. The ProcessingScreen watches currentReport
+      // and shows the "View Report" button when ready.
 
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop(); 
-        // Navigate to report
-        context.push('/report/new_audit');
-      }
     } catch (e) {
-      // Close loading dialog
+      // Go back from processing screen if error
       if (context.mounted) {
-        Navigator.of(context).pop();
+        context.pop(); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
@@ -117,7 +119,16 @@ class AuditProvider with ChangeNotifier {
     }
   }
 
-  void mockSuccess(BuildContext context) {
+  Future<void> mockSuccess(BuildContext context) async {
+    isProcessing = true;
+    notifyListeners();
+    
+    if (context.mounted) {
+      context.push('/processing');
+    }
+
+    await Future.delayed(const Duration(seconds: 4));
+
     currentReport = AuditReport(
       status: 'FAIL',
       riskScore: 85,
@@ -137,6 +148,9 @@ class AuditProvider with ChangeNotifier {
       ],
     );
     notifyListeners();
-    context.push('/report/new_audit');
+    
+    if (context.mounted) {
+      context.pushReplacement('/report/new_audit');
+    }
   }
 }

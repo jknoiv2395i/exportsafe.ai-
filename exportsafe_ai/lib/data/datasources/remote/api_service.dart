@@ -49,4 +49,33 @@ class ApiService {
       throw Exception('Error connecting to server: $e');
     }
   }
+  Future<Map<String, dynamic>> generateLcDraft({
+    String? prompt,
+    String? beneficiary,
+    String? amount,
+    String? terms,
+  }) async {
+    final uri = Uri.parse('$baseUrl/generate-lc');
+    
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          if (prompt != null) 'prompt': prompt,
+          if (beneficiary != null) 'beneficiary': beneficiary,
+          if (amount != null) 'amount': amount,
+          if (terms != null) 'terms': terms,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to generate draft: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error connecting to AI service: $e');
+    }
+  }
 }

@@ -128,14 +128,6 @@ class UploadScreen extends StatelessWidget {
             ),
           ),
           
-          // Debug Button (Temporary)
-          TextButton(
-             onPressed: () {
-               provider.mockSuccess(context);
-             },
-             child: const Text("Debug: Force Success", style: TextStyle(color: Colors.grey)),
-          ),
-
           // Spacer for Bottom Nav Dock
           const SizedBox(height: 80), 
         ],
