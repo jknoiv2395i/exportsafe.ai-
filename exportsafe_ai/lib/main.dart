@@ -1,3 +1,17 @@
+<<<<<<< HEAD
+﻿import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'firebase_options.dart';
+import 'package:exportsafe_ai/core/theme/app_theme.dart';
+import 'package:exportsafe_ai/core/router/app_router.dart';
+import 'package:exportsafe_ai/presentation/providers/dashboard_provider.dart';
+import 'package:exportsafe_ai/presentation/providers/audit_provider.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+=======
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +38,7 @@ void main() async {
     print("Firebase init failed: $e");
   }
   
+>>>>>>> a8c3d2ef8c6c477dae116be93ab5c7faa818f325
   runApp(const MyApp());
 }
 
@@ -39,9 +54,15 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp.router(
         title: 'ExportSafe AI',
+<<<<<<< HEAD
+        theme: AppTheme.lightTheme,
+        routerConfig: AppRouter.router,
+        debugShowCheckedModeBanner: false,
+=======
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         routerConfig: router,
+>>>>>>> a8c3d2ef8c6c477dae116be93ab5c7faa818f325
       ),
     );
   }

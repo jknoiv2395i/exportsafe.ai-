@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExportSafe AI - Web Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0A2342 0%, #0A2342 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0A2342;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0A2342;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0A2342;
+            box-shadow: 0 0 0 3px rgba(10, 35, 66, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 24px;
+            background: #0A2342;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: #051a2f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(10, 35, 66, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .response-box {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #333;
+        }
+
+        .response-box.error {
+            background: #fee;
+            border-color: #D72638;
+            color: #D72638;
+        }
+
+        .response-box.success {
+            background: #efe;
+            border-color: #2CA58D;
+            color: #2CA58D;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #0A2342;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0A2342;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #0A2342;
+            border-bottom-color: #0A2342;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 ExportSafe AI</h1>
+            <p>UCP 600 Compliance Auditor - Web Tester</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="value" id="totalAudits">0</div>
+                <div class="label">Total Audits</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="passCount">0</div>
+                <div class="label">Passed</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="failCount">0</div>
+                <div class="label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="avgTime">0ms</div>
+                <div class="label">Avg Time</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- LC Validation -->
+            <div class="card">
+                <h2>✅ LC Validation</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+                    Check if your LC is perfect or contains errors
+                </p>
+                <div class="form-group">
+                    <label>Paste LC Text</label>
+                    <textarea id="validateLcText" placeholder="Paste your LC here to validate..." style="min-height: 150px;">LETTER OF CREDIT
+LC Number: LC-2025-001
+Beneficiary: Assam Tea Exports Ltd
+Applicant: Global Imports Inc
+Amount: USD 50,000
+Currency: USD
+Description of Goods: 1000 KGS ASSAM TEA BLACK CTC
+Latest Shipment Date: 31-12-2025
+Expiry Date: 31-01-2026</textarea>
+                </div>
+                <button onclick="validateLC()">
+                    <span id="validateBtn">Validate LC</span>
+                </button>
+                <div id="validateResponse" style="margin-top: 16px; display: none;">
+                    <div class="response-box" id="validateResponseBox"></div>
+                </div>
+            </div>
+
+            <!-- Demo Audit -->
+            <div class="card">
+                <h2>🧪 Demo Audit</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+                    Test with hardcoded LC and Invoice data
+                </p>
+                <button onclick="runDemoAudit()">
+                    <span id="demoBtn">Run Demo Audit</span>
+                </button>
+                <div id="demoResponse" style="margin-top: 16px; display: none;">
+                    <div class="response-box" id="demoResponseBox"></div>
+                </div>
+            </div>
+
+            <!-- Health Check -->
+            <div class="card">
+                <h2>🏥 Health Check</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+                    Check backend server status
+                </p>
+                <button onclick="checkHealth()">
+                    <span id="healthBtn">Check Health</span>
+                </button>
+                <div id="healthResponse" style="margin-top: 16px; display: none;">
+                    <div class="response-box" id="healthResponseBox"></div>
+                </div>
+            </div>
+
+            <!-- Custom LC & Invoice -->
+            <div class="card full-width">
+                <h2>📝 Custom Audit</h2>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('lc')">LC</button>
+                    <button class="tab" onclick="switchTab('invoice')">Invoice</button>
+                    <button class="tab" onclick="switchTab('upload')">Upload Files</button>
+                </div>
+
+                <div id="lc" class="tab-content active">
+                    <div class="form-group">
+                        <label>Letter of Credit (Paste Text)</label>
+                        <textarea id="lcText" placeholder="Paste LC text here...">LETTER OF CREDIT
+LC Number: LC-2025-001
+Beneficiary: Assam Tea Exports Ltd
+Applicant: Global Imports Inc
+Amount: USD 50,000
+Currency: USD
+Description of Goods: 1000 KGS ASSAM TEA BLACK CTC
+Latest Shipment Date: 31-12-2025
+Expiry Date: 31-01-2026</textarea>
+                    </div>
+                </div>
+
+                <div id="invoice" class="tab-content">
+                    <div class="form-group">
+                        <label>Commercial Invoice (Paste Text)</label>
+                        <textarea id="invoiceText" placeholder="Paste Invoice text here...">COMMERCIAL INVOICE
+Invoice Number: INV-2025-001
+Invoice Date: 15-12-2025
+Issuer: Assam Tea Exports Ltd
+Buyer: Global Imports Inc
+Description of Goods: 1000 KGS ASSAM TEA BLACK CTC
+Quantity: 1000 KGS
+Unit Price: USD 50
+Total Amount: USD 50,000
+Shipment Date: 10-12-2025</textarea>
+                    </div>
+                </div>
+
+                <div id="upload" class="tab-content">
+                    <div class="form-group">
+                        <label>Upload Letter of Credit (PDF or TXT)</label>
+                        <input type="file" id="lcFile" accept=".pdf,.txt,.doc,.docx" style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Commercial Invoice (PDF or TXT)</label>
+                        <input type="file" id="invoiceFile" accept=".pdf,.txt,.doc,.docx" style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <button onclick="runCustomAudit()" style="margin-top: 16px;">
+                    <span id="customBtn">Run Custom Audit</span>
+                </button>
+
+                <div id="customResponse" style="margin-top: 16px; display: none;">
+                    <div class="response-box" id="customResponseBox"></div>
+                </div>
+            </div>
+
+            <!-- Advanced Forensic Audit -->
+            <div class="card full-width">
+                <h2>🔬 Advanced Forensic Audit (UCP 600)</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+                    Forensic-level compliance checking with automatic spelling fixes and corrected LC download
+                </p>
+                
+                <div class="form-group">
+                    <label>Letter of Credit (Paste Text)</label>
+                    <textarea id="advLcText" placeholder="Paste LC text here...">LETTER OF CREDIT
+LC Number: LC-2025-001
+Benificiary: Assam Tea Exports Ltd
+Applicant: Global Imports Inc
+Amount: USD 50,000
+Currency: USD
+Description of Goods: 1000 KGS ASSAM TEA BLACK CTC
+Latest Shipment Date: 31-12-2025
+Expiry Date: 31-01-2026</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Commercial Invoice (Paste Text)</label>
+                    <textarea id="advInvoiceText" placeholder="Paste Invoice text here...">COMMERCIAL INVOICE
+Invoice Number: INV-2025-001
+Invoice Date: 15-12-2025
+Issuer: Assam Tea Exports Ltd
+Buyer: Global Imports Inc
+Description of Goods: 1000 KGS ASSAM TEA BLACK CTC
+Quantity: 1000 KGS
+Unit Price: USD 50
+Total Amount: USD 50,000
+Shipment Date: 10-12-2025</textarea>
+                </div>
+
+                <button onclick="runAdvancedAudit()" style="margin-top: 16px;">
+                    <span id="advBtn">Run Advanced Audit</span>
+                </button>
+
+                <div id="advancedResponse" style="margin-top: 16px; display: none;">
+                    <div class="response-box" id="advancedResponseBox"></div>
+                    <button id="downloadBtn" onclick="downloadCorrectedLC()" style="margin-top: 16px; display: none; background-color: #2CA58D;">
+                        <span id="downloadBtnText">Download Corrected LC</span>
+                    </button>
+                    <button id="generatePerfectBtn" onclick="generatePerfectLC()" style="margin-top: 8px; display: none; background-color: #FF6B6B;">
+                        <span id="generatePerfectBtnText">Generate 100% Perfect LC</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stats = {
+            total: 0,
+            pass: 0,
+            fail: 0,
+            times: []
+        };
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function checkHealth() {
+            const btn = document.getElementById('healthBtn');
+            const responseDiv = document.getElementById('healthResponse');
+            const responseBox = document.getElementById('healthResponseBox');
+
+            btn.innerHTML = '<span class="loading"></span> Checking...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                
+                responseDiv.style.display = 'block';
+                responseBox.textContent = JSON.stringify(data, null, 2);
+                responseBox.className = 'response-box success';
+            } catch (error) {
+                responseDiv.style.display = 'block';
+                responseBox.textContent = `Error: ${error.message}`;
+                responseBox.className = 'response-box error';
+            } finally {
+                btn.innerHTML = 'Check Health';
+                btn.disabled = false;
+            }
+        }
+
+        async function runDemoAudit() {
+            const btn = document.getElementById('demoBtn');
+            const responseDiv = document.getElementById('demoResponse');
+            const responseBox = document.getElementById('demoResponseBox');
+
+            btn.innerHTML = '<span class="loading"></span> Running...';
+            btn.disabled = true;
+
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch('http://localhost:8000/audit/demo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                const time = Date.now() - startTime;
+                updateStats(data.status === 'PASS', time);
+
+                responseDiv.style.display = 'block';
+                responseBox.textContent = JSON.stringify(data, null, 2);
+                responseBox.className = data.status === 'PASS' ? 'response-box success' : 'response-box error';
+            } catch (error) {
+                responseDiv.style.display = 'block';
+                responseBox.textContent = `Error: ${error.message}`;
+                responseBox.className = 'response-box error';
+            } finally {
+                btn.innerHTML = 'Run Demo Audit';
+                btn.disabled = false;
+            }
+        }
+
+        async function runCustomAudit() {
+            const btn = document.getElementById('customBtn');
+            const responseDiv = document.getElementById('customResponse');
+            const responseBox = document.getElementById('customResponseBox');
+            
+            // Check which tab is active
+            const activeTab = document.querySelector('.tab-content.active').id;
+            let lcText = '';
+            let invoiceText = '';
+
+            if (activeTab === 'upload') {
+                // Handle file uploads
+                const lcFile = document.getElementById('lcFile').files[0];
+                const invoiceFile = document.getElementById('invoiceFile').files[0];
+
+                if (!lcFile || !invoiceFile) {
+                    responseBox.textContent = 'Error: Please select both LC and Invoice files';
+                    responseBox.className = 'response-box error';
+                    responseDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    lcText = await lcFile.text();
+                    invoiceText = await invoiceFile.text();
+                } catch (error) {
+                    responseBox.textContent = `Error reading files: ${error.message}`;
+                    responseBox.className = 'response-box error';
+                    responseDiv.style.display = 'block';
+                    return;
+                }
+            } else {
+                // Handle text input
+                lcText = document.getElementById('lcText').value;
+                invoiceText = document.getElementById('invoiceText').value;
+
+                if (!lcText.trim() || !invoiceText.trim()) {
+                    responseBox.textContent = 'Error: Please fill in both LC and Invoice fields';
+                    responseBox.className = 'response-box error';
+                    responseDiv.style.display = 'block';
+                    return;
+                }
+            }
+
+            btn.innerHTML = '<span class="loading"></span> Running...';
+            btn.disabled = true;
+
+            const startTime = Date.now();
+
+            try {
+                const formData = new FormData();
+                formData.append('lc_file', new Blob([lcText], { type: 'text/plain' }), 'lc.txt');
+                formData.append('invoice_file', new Blob([invoiceText], { type: 'text/plain' }), 'invoice.txt');
+
+                const response = await fetch('http://localhost:8000/audit', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                const time = Date.now() - startTime;
+                updateStats(data.status === 'PASS', time);
+
+                responseDiv.style.display = 'block';
+                responseBox.textContent = JSON.stringify(data, null, 2);
+                responseBox.className = data.status === 'PASS' ? 'response-box success' : 'response-box error';
+            } catch (error) {
+                responseDiv.style.display = 'block';
+                responseBox.textContent = `Error: ${error.message}`;
+                responseBox.className = 'response-box error';
+            } finally {
+                btn.innerHTML = 'Run Custom Audit';
+                btn.disabled = false;
+            }
+        }
+
+        function updateStats(passed, time) {
+            stats.total++;
+            if (passed) stats.pass++;
+            else stats.fail++;
+            stats.times.push(time);
+
+            document.getElementById('totalAudits').textContent = stats.total;
+            document.getElementById('passCount').textContent = stats.pass;
+            document.getElementById('failCount').textContent = stats.fail;
+            
+            const avgTime = Math.round(stats.times.reduce((a, b) => a + b, 0) / stats.times.length);
+            document.getElementById('avgTime').textContent = avgTime + 'ms';
+        }
+
+        async function validateLC() {
+            const lcText = document.getElementById('validateLcText').value;
+            const btn = document.getElementById('validateBtn');
+            const responseDiv = document.getElementById('validateResponse');
+            const responseBox = document.getElementById('validateResponseBox');
+
+            if (!lcText.trim()) {
+                responseBox.textContent = 'Error: Please enter LC text';
+                responseBox.className = 'response-box error';
+                responseDiv.style.display = 'block';
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span> Validating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/validate/lc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lc_text: lcText })
+                });
+                const data = await response.json();
+                
+                responseDiv.style.display = 'block';
+                
+                // Format the response nicely
+                let formattedResponse = '';
+                
+                // Check if data is valid
+                if (!data || typeof data !== 'object') {
+                    responseBox.textContent = 'Error: Invalid response format';
+                    responseBox.className = 'response-box error';
+                } else if (data.is_valid) {
+                    formattedResponse = '✅ LC IS PERFECT!\n\n';
+                    formattedResponse += 'Status: COMPLIANT\n';
+                    formattedResponse += 'All required fields present and valid\n\n';
+                    responseBox.textContent = formattedResponse;
+                    responseBox.className = 'response-box success';
+                } else {
+                    formattedResponse = '⚠️ LC CONTAINS ERRORS\n\n';
+                    formattedResponse += 'Errors Found:\n';
+                    
+                    // Safely iterate through errors
+                    if (Array.isArray(data.errors) && data.errors.length > 0) {
+                        data.errors.forEach((err, i) => {
+                            formattedResponse += `${i+1}. ${err.type}: ${err.message}\n`;
+                            if (err.suggestion) {
+                                formattedResponse += `   💡 Fix: ${err.suggestion}\n`;
+                            }
+                            formattedResponse += '\n';
+                        });
+                    } else {
+                        formattedResponse += 'No specific errors found\n\n';
+                    }
+                    
+                    // Safely iterate through auto-fixes
+                    if (Array.isArray(data.auto_fixes) && data.auto_fixes.length > 0) {
+                        formattedResponse += '\n🔧 AUTO-FIXES AVAILABLE:\n';
+                        data.auto_fixes.forEach((fix, i) => {
+                            formattedResponse += `${i+1}. ${fix.description}\n`;
+                            formattedResponse += `   Action: ${fix.action}\n\n`;
+                        });
+                    }
+                    
+                    responseBox.textContent = formattedResponse;
+                    responseBox.className = 'response-box error';
+                }
+            } catch (error) {
+                responseDiv.style.display = 'block';
+                responseBox.textContent = `Error: ${error.message}`;
+                responseBox.className = 'response-box error';
+            } finally {
+                btn.innerHTML = 'Validate LC';
+                btn.disabled = false;
+            }
+        }
+
+        // Store corrected LC for download
+        let correctedLCData = '';
+
+        async function runAdvancedAudit() {
+            const btn = document.getElementById('advBtn');
+            const responseDiv = document.getElementById('advancedResponse');
+            const responseBox = document.getElementById('advancedResponseBox');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            const lcText = document.getElementById('advLcText').value;
+            const invoiceText = document.getElementById('advInvoiceText').value;
+
+            btn.innerHTML = '<span class="loading"></span> Running Advanced Audit...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/audit/advanced', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lc_text: lcText, invoice_text: invoiceText })
+                });
+                const data = await response.json();
+                
+                responseDiv.style.display = 'block';
+                
+                // Check if response is valid
+                if (!data || typeof data !== 'object') {
+                    responseBox.textContent = 'Error: Invalid response from server';
+                    responseBox.className = 'response-box error';
+                    downloadBtn.style.display = 'none';
+                    btn.innerHTML = 'Run Advanced Audit';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Store corrected LC
+                correctedLCData = data.corrected_lc || '';
+                
+                // Format the response with safe property access
+                let formattedResponse = '';
+                formattedResponse += `${data.audit_summary || 'No summary'}\n\n`;
+                formattedResponse += `Risk Score: ${data.risk_score !== undefined ? data.risk_score : 'N/A'}/100\n\n`;
+                
+                if (data.logic_checks && typeof data.logic_checks === 'object') {
+                    formattedResponse += 'Logic Checks:\n';
+                    for (let check in data.logic_checks) {
+                        formattedResponse += `  - ${check.replace(/_/g, ' ').toUpperCase()}: ${data.logic_checks[check]}\n`;
+                    }
+                }
+                
+                formattedResponse += `\nDiscrepancies: ${data.total_discrepancies !== undefined ? data.total_discrepancies : 0} total\n`;
+                formattedResponse += `  - Critical: ${data.critical_count !== undefined ? data.critical_count : 0}\n`;
+                formattedResponse += `  - Major: ${data.major_count !== undefined ? data.major_count : 0}\n`;
+                formattedResponse += `  - Minor: ${data.minor_count !== undefined ? data.minor_count : 0}\n\n`;
+                
+                if (Array.isArray(data.discrepancies) && data.discrepancies.length > 0) {
+                    formattedResponse += 'Detailed Discrepancies:\n';
+                    data.discrepancies.forEach((disc, i) => {
+                        formattedResponse += `\n${i+1}. [${disc.severity || 'UNKNOWN'}] ${disc.category || 'UNKNOWN'}\n`;
+                        formattedResponse += `   Field: ${disc.field || 'N/A'}\n`;
+                        formattedResponse += `   LC: ${disc.lc_requirement || 'N/A'}\n`;
+                        formattedResponse += `   Document: ${disc.document_value || 'N/A'}\n`;
+                        formattedResponse += `   Rule: ${disc.violation_rule || 'N/A'}\n`;
+                        formattedResponse += `   Fix: ${disc.suggested_fix || 'N/A'}\n`;
+                    });
+                } else {
+                    formattedResponse += '\nNo discrepancies found!\n';
+                }
+                
+                responseBox.textContent = formattedResponse;
+                responseBox.className = (data.risk_score !== undefined && data.risk_score <= 20) ? 'response-box success' : 'response-box error';
+                
+                // Show download button if there's corrected LC
+                if (correctedLCData && correctedLCData.length > 0) {
+                    downloadBtn.style.display = 'block';
+                } else {
+                    downloadBtn.style.display = 'none';
+                }
+                
+                // Show generate perfect LC button if there are discrepancies
+                const generateBtn = document.getElementById('generatePerfectBtn');
+                if (data.total_discrepancies > 0) {
+                    generateBtn.style.display = 'block';
+                } else {
+                    generateBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.style.display = 'block';
+                responseBox.textContent = `Error: ${error.message}\n\nMake sure:\n1. Backend server is running on port 8000\n2. LC and Invoice text are not empty\n3. Check browser console for more details`;
+                responseBox.className = 'response-box error';
+                downloadBtn.style.display = 'none';
+            } finally {
+                btn.innerHTML = 'Run Advanced Audit';
+                btn.disabled = false;
+            }
+        }
+
+        function downloadCorrectedLC() {
+            if (!correctedLCData) {
+                alert('No corrected LC available');
+                return;
+            }
+
+            const btn = document.getElementById('downloadBtnText');
+            btn.innerHTML = '<span class="loading"></span> Downloading...';
+
+            try {
+                // Create blob and download
+                const blob = new Blob([correctedLCData], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'corrected_lc.txt';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert(`Download error: ${error.message}`);
+            } finally {
+                btn.innerHTML = 'Download Corrected LC';
+            }
+        }
+
+        async function generatePerfectLC() {
+            const lcText = document.getElementById('advLcText').value;
+            const invoiceText = document.getElementById('advInvoiceText').value;
+            const btn = document.getElementById('generatePerfectBtn');
+            const btnText = document.getElementById('generatePerfectBtnText');
+            
+            btnText.innerHTML = '<span class="loading"></span> Generating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/generate/perfect-lc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lc_text: lcText, invoice_text: invoiceText })
+                });
+
+                const data = await response.json();
+
+                if (data.perfect_lc) {
+                    // Show the perfect LC
+                    const responseBox = document.getElementById('advancedResponseBox');
+                    responseBox.innerHTML = `
+                        <h3 style="color: #2CA58D; margin-top: 0;">✓ 100% Perfect LC Generated</h3>
+                        <p style="color: #666; font-size: 12px; margin: 8px 0;">
+                            This LC is 100% compliant with UCP 600 and ISBP 745 standards
+                        </p>
+                        <pre style="background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+${data.perfect_lc}
+                        </pre>
+                    `;
+                    
+                    // Store perfect LC for download
+                    correctedLCData = data.perfect_lc;
+                    
+                    // Show download button
+                    document.getElementById('downloadBtn').style.display = 'block';
+                    document.getElementById('downloadBtn').innerHTML = '<span id="downloadBtnText">Download Perfect LC</span>';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to generate perfect LC'));
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}\n\nMake sure backend server is running on port 8000`);
+            } finally {
+                btnText.innerHTML = 'Generate 100% Perfect LC';
+                btn.disabled = false;
+            }
+        }
+
+        // Auto-run demo on load
+        window.addEventListener('load', () => {
+            setTimeout(runDemoAudit, 500);
+        });
+    </script>
+</body>
+</html>
