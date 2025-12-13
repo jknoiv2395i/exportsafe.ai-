@@ -275,7 +275,7 @@ async def audit_documents(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class LCRequest(BaseModel):
     prompt: Optional[str] = None

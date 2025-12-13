@@ -23,15 +23,6 @@ class _WriteLCScreenState extends State<WriteLCScreen> {
     final prompt = _aiPromptController.text.trim();
     if (prompt.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please describe the deal first")),
-      );
-      return;
-    }
-
-  Future<void> _generateDraft() async {
-    final prompt = _aiPromptController.text.trim();
-    if (prompt.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please describe the deal first.")),
       );
       return;
