@@ -10534,3 +10534,9 @@ For issues or questions:
 - **Added**: ssets/logo.png (copied from user upload).
 - **Configured**: lutter_launcher_icons to generate Android and Web icons.
 
+
+### [2025-12-15] Cloud Backend Connection
+- **Updated**: pi_service.dart connected to production backend.
+- **URL**: https://exportsafe-ai-1.onrender.com (Render).
+- **Note**: App now functions globally without local Python server.
+

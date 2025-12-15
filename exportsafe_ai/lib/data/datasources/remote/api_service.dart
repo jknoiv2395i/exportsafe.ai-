@@ -8,8 +8,9 @@ class ApiService {
   // Use localhost for Android emulator (10.0.2.2) or local IP for real device
   // For Web/iOS simulator, localhost is fine.
   // Using localhost by default for Web support as requested
-  static const String baseUrl = 'http://127.0.0.1:8000'; 
-  // static const String baseUrl = 'http://10.0.2.2:8000'; // Use this for Android Emulator
+  // Cloud Backend (Render)
+  static const String baseUrl = 'https://exportsafe-ai-1.onrender.com';
+  // static const String baseUrl = 'http://127.0.0.1:8000'; // Localhost fallback
 
   Future<AuditReport> auditDocuments(PlatformFile lcFile, PlatformFile invoiceFile) async {
     final uri = Uri.parse('$baseUrl/audit');
