@@ -3,6 +3,8 @@ import json
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, List
 from dotenv import load_dotenv
 import shutil
 import tempfile
@@ -35,7 +37,7 @@ gemini_api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
 if gemini_api_key:
     genai.configure(api_key=gemini_api_key)
     # Using gemini-2.0-flash as it is available in the user's account
-    gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     gemini_model = None
     print("Warning: GOOGLE_GEMINI_API_KEY not found")

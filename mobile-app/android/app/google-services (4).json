@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1095408895550",
+    "project_id": "xpoartsafe",
+    "storage_bucket": "xpoartsafe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1095408895550:android:387acaffda36fb181c336f",
+        "android_client_info": {
+          "package_name": "com.android.application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4MvpTQqxlQrnqpQugT-w-CUJ0nC937Mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
