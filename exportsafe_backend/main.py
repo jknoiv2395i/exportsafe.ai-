@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -317,97 +318,247 @@ class LCResponse(BaseModel):
     additional_conditions: List[str]
     ucp600_statement: str = "Subject to UCP 600"
 
+# Intelligent LC Generator System Prompt
+LC_GENERATOR_SYSTEM_PROMPT = """
+ROLE
+You are the "Expert Trade Finance Architect" (Codename: ARCHITECT). You are capable of drafting perfect, UCP 600 compliant Letters of Credit by synthesizing data from multiple trade documents (Invoices, Packing Lists, Bills of Lading, etc.).
+
+YOUR GOAL
+Generate a formal, error-free Letter of Credit (MT700 format elements) by extracting and cross-referencing data from the provided documents.
+
+INPUT DATA
+You will receive raw text extracted from multiple PDF documents uploaded by the user.
+The user has selected the route: {route_type}
+
+RULES
+1. **Source of Truth**: Trust the Commercial Invoice for amounts and goods description. Trust the Transport Document (BL/AWB) for ports and dates.
+2. **Cross-Reference**: Ensure the LC amount matches the Invoice total. Ensure shipment dates form a logical timeline.
+3. **UCP 600 Strictness**:
+   - "About" or "Circa" allows +/- 10% in quantity/amount.
+   - Transshipment/Partial Shipment defaults to "ALLOWED" unless context suggests otherwise.
+4. **Missing Data**: If a critical field (like Beneficiary Bank) is completely missing from the docs, generate a realistic placeholder (e.g., "[BENEFICIARY BANK NAME]").
+
+OUTPUT (STRICT JSON)
+Return ONLY this JSON:
+{
+    "lc_number": "Generate a unique format like LC-YYYY-XXXX",
+    "issue_date": "YYYY-MM-DD (Today)",
+    "expiry_date": "YYYY-MM-DD (Calculated: Latest Shipment + 21 days)",
+    "expiry_place": "Country of Beneficiary",
+    "applicant": { "name": "...", "address": "..." },
+    "beneficiary": { "name": "...", "address": "..." },
+    "issuing_bank": { "name": "...", "address": "...", "swift_code": "..." },
+    "advising_bank": { "name": "...", "address": "...", "swift_code": "..." },
+    "currency": "USD",
+    "amount": "0.00",
+    "description_of_goods": " Precise description from Invoice...",
+    "incoterms": "e.g., CIF Shanghai",
+    "shipment_details": {
+        "port_of_loading": "...",
+        "port_of_discharge": "...",
+        "latest_shipment_date": "YYYY-MM-DD",
+        "partial_shipment": "ALLOWED" | "PROHIBITED",
+        "transshipment": "ALLOWED" | "PROHIBITED"
+    },
+    "required_documents": [
+        "Commercial Invoice (Original + 3 Copies)",
+        "Packing List (Original + 3 Copies)",
+        "Full Set Clean On Board Bill of Lading"
+    ],
+    "additional_conditions": [
+        "All banking charges outside issuing bank are for beneficiary's account",
+        "Documents must be presented within 21 days after shipment date"
+    ],
+    "ucp600_statement": "Subject to UCP 600"
+}
+"""
+
 @app.post("/generate-lc", response_model=LCResponse)
-async def generate_lc(request: LCRequest):
+async def generate_lc(
+    files: List[UploadFile] = File(...),
+    route_type: str = "Maritime"
+):
     """
-    Generates a formal Letter of Credit draft ensuring strict UCP 600 compliance.
+    Generates a formal Letter of Credit draft by analyzing uploaded trade documents.
     """
-    models_to_try = [
-        'gemini-2.0-flash-exp', 
-        'gemini-1.5-pro',
-        'gemini-1.5-flash',
-    ]
-    
-    # Context construction
-    input_context = ""
-    if request.prompt:
-        input_context += f"User Scenario: {request.prompt}\n"
-    if request.beneficiary:
-        input_context += f"Beneficiary: {request.beneficiary}\n"
-    if request.amount:
-        input_context += f"Amount: {request.amount}\n"
-    if request.terms:
-        input_context += f"Key Terms: {request.terms}\n"
+    try:
+        # 1. Extract Text from ALL Valid Files
+        combined_text = ""
+        for file in files:
+            if file.filename.lower().endswith('.pdf'):
+                text = await extract_text_from_pdf(file)
+                combined_text += f"\n--- DOCUMENT: {file.filename} ---\n{text}\n"
+        
+        if not combined_text.strip():
+             # Fallback for empty/invalid upload
+             pass 
 
-    ucp_guidelines = """
-    STRICT GUIDELINES (UCP 600):
-    1. **Autonomy**: LC is independent of sales contract.
-    2. **Strict Compliance**: No spelling errors.
-    3. **Roles**: 
-       - Applicant = Buyer (Importer)
-       - Beneficiary = Seller (Exporter)
-    4. **Documents**: Must list Commercial Invoice, Packing List, Bill of Lading, Certificate of Origin, Insurance.
-    5. **Irrevocability**: Must be stated.
-    """
+        # 2. Construct AI Prompt
+        final_prompt = LC_GENERATOR_SYSTEM_PROMPT.format(route_type=route_type) + f"\n\nEXTRACTED DATA FROM DOCUMENTS:\n{combined_text}"
 
-    full_prompt = f"""
-    You are an expert Trade Finance Officer with 20 years of experience drafting Letters of Credit.
-    
-    {ucp_guidelines}
-    
-    TASK:
-    Draft a formal Letter of Credit based on these details:
-    {input_context}
-
-    INSTRUCTIONS:
-    - If specific details (like addresses or bank names) are missing, generate REALISTIC, PROFESSIONAL PLACEHOLDERS (e.g., "Bank of America, NY Branch", "Shanghai Trading Co."). Do NOT use "N/A" or "Unknown".
-    - Populate all fields in the JSON schema.
-    - Ensure 'required_documents' is comprehensive.
-    - Ensure 'additional_conditions' covers standard clauses (e.g., "All banking charges outside issuing bank are for beneficiary's account").
-    """
-
-    last_exception = None
-
-    for model_name in models_to_try:
-        try:
-            print(f"Applying to Trade Finance Dept (Model: {model_name})...")
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    response_schema=LCResponse
+        models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash']
+        
+        for model_name in models_to_try:
+            try:
+                print(f"Architect Drafting LC (Model: {model_name})...")
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema=LCResponse
+                    )
                 )
-            )
+                
+                response = model.generate_content(final_prompt)
+                
+                if response.text:
+                    clean_json = response.text
+                    # Robust JSON extraction: Find first '{' and last '}'
+                    try:
+                        start_idx = clean_json.find('{')
+                        end_idx = clean_json.rfind('}')
+                        if start_idx != -1 and end_idx != -1:
+                            clean_json = clean_json[start_idx : end_idx + 1]
+                        
+                        return LCResponse.model_validate_json(clean_json)
+                    except Exception as parse_error:
+                         print(f"JSON Parse Error: {parse_error} - Content: {response.text[:100]}...")
+                         continue
             
-            response = model.generate_content(full_prompt)
-            
-            if response.text:
-                return LCResponse.model_validate_json(response.text)
-            
-        except Exception as e:
-            print(f"Model {model_name} failed: {str(e)}")
-            last_exception = e
-            continue
+            except Exception as e:
+                print(f"Model {model_name} failed: {str(e)}")
+                continue
 
-    # Fallback
-    print("All AI models failed, using manual fallback.")
-    return LCResponse(
-        lc_number="DRAFT-001",
-        issue_date="2024-12-12",
-        expiry_date="2025-03-12",
-        expiry_place="New York, USA",
-        applicant=Party(name="Global Importers Inc.", address="123 Market St, New York, NY"),
-        beneficiary=Party(name=request.beneficiary or "Export Zone Ltd", address="London, UK"),
-        issuing_bank=Bank(name="Chase Bank", address="270 Park Ave, NY", swift_code="CHASUS33"),
-        currency="USD",
-        amount=str(request.amount or "50,000"),
-        description_of_goods=request.terms or "General Merchandise",
-        incoterms="CIF New York",
-        shipment_details=ShipmentDetails(port_of_loading="London", port_of_discharge="New York", partial_shipment="Allowed", transshipment="Prohibited"),
-        required_documents=["Commercial Invoice", "Bill of Lading", "Packing List"],
-        additional_conditions=["Subject to UCP 600"],
-        ucp600_statement="Subject to UCP 600"
-    )
+        # Fallback if AI fails
+        print("All AI models failed, using manual fallback.")
+        return LCResponse(
+            lc_number="FALLBACK-001",
+            issue_date="2024-01-01",
+            expiry_date="2024-04-01",
+            expiry_place="London, UK",
+            applicant=Party(name="Unknown Applicant", address="N/A"),
+            beneficiary=Party(name="Unknown Beneficiary", address="N/A"),
+            issuing_bank=Bank(name="Demo Bank", address="N/A"),
+            currency="USD",
+            amount="0.00",
+            description_of_goods="AI Generation Failed - Please check backend logs or API Key.",
+            incoterms="N/A",
+            shipment_details=ShipmentDetails(port_of_loading="N/A", port_of_discharge="N/A", partial_shipment="Allowed", transshipment="Allowed"),
+            required_documents=[],
+            additional_conditions=[]
+        )
+
+    except Exception as e:
+        print(f"Error generating LC: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Forensic Auditor System Prompt
+FORENSIC_AUDITOR_PROMPT = """
+ROLE
+You are the "Chief Trade Finance Forensic Auditor" (Codename: HAWKEYE). You are the world's most pedantic, unforgiving, and detail-oriented expert in ICC UCP 600, ISBP 745, and Incoterms 2020. You have zero tolerance for errors.
+
+THE INPUT
+You will receive raw text from a Letter of Credit (LC) and related documents.
+CRITICAL ASSUMPTION: The input text is likely RIGGED with subtle typos, logical errors, OCR artifacts, and data inconsistencies. Your job is to EXPOSE them all.
+Do NOT assume the document is correct. Assume it is BROKEN until proven otherwise.
+
+YOUR MISSION
+Perform a deep, line-by-line FORENSIC AUTOPSY of the text.
+1.  **TYPO HUNTER**: Find every single spelling mistake (e.g., "Banl" -> "Bank", "Dolars" -> "Dollars", "Unite States" -> "United States").
+2.  **DATA CONSISTENCY**: Check if amounts match (words vs figures). Check if proper names are consistent.
+3.  **LOGIC CHECK**: 
+    - Expiry Date CANNOT be before Issue Date.
+    - Latest Shipment Date CANNOT be after Expiry Date.
+    - Port of Loading and Discharge must make geographic sense.
+4.  **UCP 600 COMPLIANCE**: Flag ambiguity. "Approximate" amount must be +/- 10%.
+
+OUTPUT FORMAT (STRICT JSON)
+Return ONLY this JSON. No markdown lines, no chat.
+{
+  "status": "CRITICAL_FAIL" | "PASS" | "WARNING",
+  "risk_score": 0-100,
+  "summary": "Detailed executive summary of the findings.",
+  "corrected_lc_data": {
+    "lc_number": "Extracted & Corrected Number",
+    "amount": "Normalized Amount (e.g., 50000.00)",
+    "currency": "Currency Code (e.g., USD)",
+    "expiry_date": "YYYY-MM-DD",
+    "latest_shipment_date": "YYYY-MM-DD",
+    "beneficiary": "Corrected Beneficiary Name",
+    "applicant": "Corrected Applicant Name"
+  },
+  "discrepancies": [
+    {
+      "field": "Exact field name (e.g., '40E - Applicable Rules')",
+      "original_text": "The exact substring from input",
+      "corrected_value": "What it SHOULD be",
+      "issue_type": "TYPO" | "LOGIC" | "UCP_VIOLATION" | "MISSING" | "DATA_MISMATCH",
+      "severity": "HIGH" | "MEDIUM" | "LOW",
+      "explanation": "Precise explanation (e.g., 'Misspelled 'Irrevocable' as 'Irevocable'')."
+    }
+  ],
+  "refined_lc_text": "Reconstruct the PERFECT, clean, typo-free version of the LC text here."
+}
+"""
+
+@app.post("/forensic-audit")
+async def forensic_audit(
+    lc_file: UploadFile = File(...),
+    invoice_file: UploadFile = File(...)
+):
+    try:
+        # 1. Extract Text
+        lc_text = await extract_text_from_pdf(lc_file)
+        invoice_text = await extract_text_from_pdf(invoice_file)
+
+        if not lc_text or not invoice_text:
+             raise HTTPException(status_code=500, detail="Failed to extract text from documents")
+
+        # 2. Send to AI
+        if gemini_model:
+            prompt = f"{FORENSIC_AUDITOR_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
+            
+            try:
+                # Use strict JSON generation if possible, or just prompting
+                response = gemini_model.generate_content(prompt)
+                
+                clean_json = response.text
+                # Cleanup markdown
+                if "```json" in clean_json:
+                    clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                elif "```" in clean_json:
+                    clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                    
+                data = json.loads(clean_json)
+                return data
+
+            except Exception as e:
+                print(f"AI Forensic Audit Failed: {e}")
+                # Fallback / Error
+                return {
+                    "status": "CRITICAL_FAIL",
+                    "risk_score": 100,
+                    "summary": "AI Audit process failed due to server error.",
+                    "corrected_lc_data": {},
+                    "discrepancies": [],
+                    "refined_lc_text": "Error generating report."
+                }
+        else:
+             return {
+                "status": "WARNING",
+                "risk_score": 50,
+                "summary": "Demo Mode: AI not configured.",
+                "corrected_lc_data": {
+                     "lc_number": "DEMO-123",
+                     "amount": "50000.00"
+                },
+                "discrepancies": [],
+                "refined_lc_text": "Demo text only."
+            }
+
+    except Exception as e:
+        print(f"Error in forensic audit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
