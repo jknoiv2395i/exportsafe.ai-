@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuditSummary {
   final String id;
@@ -15,21 +17,22 @@ class AuditSummary {
 }
 
 class DashboardProvider with ChangeNotifier {
-  // Dummy User Stats
-  int auditsDone = 12;
-  double moneySaved = 50000;
-  int creditsLeft = 5;
-  String userName = "Exporter";
+  // Real Data Streams
+  Stream<List<Map<String, dynamic>>> get recentAuditsStream {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return Stream.value([]);
 
-  // Dummy Recent Activity
-  List<AuditSummary> recentAudits = [
-    AuditSummary(id: '1', lcNumber: 'LC-9988', status: 'Rejected', date: '2023-10-25'),
-    AuditSummary(id: '2', lcNumber: 'LC-9989', status: 'Approved', date: '2023-10-24'),
-    AuditSummary(id: '3', lcNumber: 'LC-9990', status: 'Processing', date: '2023-10-24'),
-  ];
-
-  void refreshData() {
-    // TODO: Fetch real data from Firestore
-    notifyListeners();
+    return FirebaseFirestore.instance
+        .collection('audits')
+        .where('userId', isEqualTo: user.uid)
+        .orderBy('createdAt', descending: true)
+        .limit(5)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              // Add ID to data for navigation
+              data['id'] = doc.id;
+              return data;
+            }).toList());
   }
 }

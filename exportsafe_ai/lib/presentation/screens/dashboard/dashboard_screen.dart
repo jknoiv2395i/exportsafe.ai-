@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'dart:async';
 import '../audit/forensic_upload_screen.dart';
@@ -553,7 +556,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
                   const SizedBox(height: 16),
 
-                  // 3. Upcoming Shipments - Animated
+                  // 3. Recent Activity - Animated
                   FadeTransition(
                     opacity: _listFadeAnimation,
                     child: SlideTransition(
@@ -580,38 +583,113 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Upcoming Shipments',
+                                  'Recent Audits',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: textDark,
+                                    color: Color(0xFF1D1D1F),
                                   ),
                                 ),
-                                Text(
-                                  'Manage',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: primaryColor,
+                                GestureDetector(
+                                  onTap: () {
+                                     context.push('/history');
+                                  },
+                                  child: const Text(
+                                    'View All',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFFF3B3B),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 24),
-                            _buildMinimalShipmentItem(
-                              icon: Icons.local_shipping_outlined,
-                              title: 'Container #SHP789',
-                              subtitle: 'Arriving Jan 15, 2024',
-                              status: 'In Transit',
-                              statusColor: Colors.blue,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildMinimalShipmentItem(
-                              icon: Icons.inventory_2_outlined,
-                              title: 'Pallet #PLT123',
-                              subtitle: 'Scheduled Jan 20, 2024',
-                              status: 'Scheduled',
-                              statusColor: Colors.orange,
+                            
+                            // Real Data Stream
+                            Consumer<DashboardProvider>(
+                              builder: (context, provider, child) {
+                                return StreamBuilder<List<Map<String, dynamic>>>(
+                                  stream: provider.recentAuditsStream,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator());
+                                    }
+                                    
+                                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 32),
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(20),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFF3B3B).withOpacity(0.1),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.history_toggle_off_rounded,
+                                                  size: 32,
+                                                  color: Color(0xFFFF3B3B),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              const Text(
+                                                'No Recent Activity',
+                                                style: TextStyle(
+                                                  color: Color(0xFF1D1D1F),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: -0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Your completed audits will appear here',
+                                                style: TextStyle(
+                                                  color: const Color(0xFF1D1D1F).withOpacity(0.5),
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    final audits = snapshot.data!;
+                                    
+                                    return ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: audits.length,
+                                      separatorBuilder: (context, index) => const SizedBox(height: 16),
+                                      itemBuilder: (context, index) {
+                                        final audit = audits[index];
+                                        final isPass = audit['status'] == 'PASS';
+                                        
+                                        // Format date simply
+                                        String dateStr = '';
+                                        if (audit['createdAt'] != null) {
+                                           if (audit['createdAt'] is Timestamp) {
+                                             dateStr = (audit['createdAt'] as Timestamp).toDate().toString().split(' ')[0];
+                                           }
+                                        }
+
+                                        return _buildMinimalShipmentItem(
+                                          icon: isPass ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                                          title: audit['lcFileName'] ?? 'Unknown Document',
+                                          subtitle: dateStr.isNotEmpty ? 'Audited on $dateStr' : 'Just now',
+                                          status: audit['status'] ?? 'UNKNOWN',
+                                          statusColor: isPass ? Colors.green : Colors.red,
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
                             ),
                           ],
                         ),

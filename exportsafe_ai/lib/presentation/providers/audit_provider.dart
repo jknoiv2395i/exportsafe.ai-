@@ -8,12 +8,18 @@ import 'package:file_picker/file_picker.dart';
 import '../../../data/datasources/remote/api_service.dart';
 import '../../../data/models/audit_report.dart';
 
+import '../../../data/services/analytics_service.dart';
+
+import '../../../data/services/storage_service.dart';
+
 class AuditProvider with ChangeNotifier {
   PlatformFile? lcFile;
   PlatformFile? invoiceFile;
   bool isProcessing = false;
   AuditReport? currentReport;
   final ApiService _apiService = ApiService();
+  final AnalyticsService _analytics = AnalyticsService();
+  final StorageService _storageService = StorageService();
 
   bool get canRunAnalysis => lcFile != null && invoiceFile != null;
 
@@ -61,12 +67,14 @@ class AuditProvider with ChangeNotifier {
     currentReport = null;
     notifyListeners();
   }
-
   Future<void> runAnalysis(BuildContext context) async {
     if (!canRunAnalysis) return;
 
     isProcessing = true;
     notifyListeners();
+    
+    // Log start
+    await _analytics.logAuditStarted(lcFile!.name, invoiceFile!.name);
 
     // Navigate to processing screen instead of dialog
     if (context.mounted) {
@@ -77,18 +85,45 @@ class AuditProvider with ChangeNotifier {
       // Run analysis (no artificial delay needed, UI handles it)
       currentReport = await _apiService.auditDocuments(lcFile!, invoiceFile!);
       
-      // Save to Firestore (only if Firebase is initialized)
+      // Log completion
+      await _analytics.logAuditCompleted(
+        status: currentReport!.status,
+        riskScore: currentReport!.riskScore,
+        discrepancyCount: currentReport!.discrepancies.length,
+      );
+
+      // Save to Firebase (Storage + Firestore) (only if Firebase is initialized)
       try {
         if (Firebase.apps.isNotEmpty) {
           final user = FirebaseAuth.instance.currentUser;
           if (user != null) {
+            // 1. Upload Files to Cloud Storage
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final userUploadPath = 'uploads/${user.uid}/$timestamp';
+            
+            String? lcUrl;
+            String? invoiceUrl;
+            
+            // Upload in parallel
+            final uploadResults = await Future.wait([
+               _storageService.uploadFile(lcFile!, '$userUploadPath/${lcFile!.name}'),
+               _storageService.uploadFile(invoiceFile!, '$userUploadPath/${invoiceFile!.name}'),
+            ]);
+            
+            lcUrl = uploadResults[0];
+            invoiceUrl = uploadResults[1];
+
+            // 2. Save Metadata to Firestore
             await FirebaseFirestore.instance.collection('audits').add({
               'userId': user.uid,
               'createdAt': FieldValue.serverTimestamp(),
+              'lcFileName': lcFile!.name,
+              'lcFileUrl': lcUrl, // New: Storage URL
+              'invoiceFileName': invoiceFile!.name,
+              'invoiceFileUrl': invoiceUrl, // New: Storage URL
               'status': currentReport!.status,
               'riskScore': currentReport!.riskScore,
-              'lcFileName': lcFile!.name,
-              'invoiceFileName': invoiceFile!.name,
+              'report': currentReport!.toJson(),
             });
           }
         } else {
@@ -98,7 +133,7 @@ class AuditProvider with ChangeNotifier {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('Error saving to Firestore: $e');
+          print('Error saving to Firestore/Storage: $e');
         }
       }
       
@@ -106,6 +141,7 @@ class AuditProvider with ChangeNotifier {
       // and shows the "View Report" button when ready.
 
     } catch (e) {
+      await _analytics.logError(e.toString(), 'runAnalysis');
       // Go back from processing screen if error
       if (context.mounted) {
         context.pop(); 

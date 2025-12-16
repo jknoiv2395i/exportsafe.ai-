@@ -21,6 +21,14 @@ class AuditReport {
   }
 
   bool get isPassed => status == 'PASS';
+
+  Map<String, dynamic> toJson() {
+    return {
+      'status': status,
+      'risk_score': riskScore,
+      'discrepancies': discrepancies.map((d) => d.toJson()).toList(),
+    };
+  }
 }
 
 class Discrepancy {
@@ -46,5 +54,15 @@ class Discrepancy {
       reason: json['reason'] ?? '',
       severity: json['severity'] ?? 'HIGH',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'field': field,
+      'lc_value': lcValue,
+      'inv_value': invValue,
+      'reason': reason,
+      'severity': severity,
+    };
   }
 }
