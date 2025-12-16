@@ -51,24 +51,31 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> generateLcDraft({
-    String? prompt,
-    String? beneficiary,
-    String? amount,
-    String? terms,
+    required List<PlatformFile> files,
+    String routeType = "Maritime",
   }) async {
     final uri = Uri.parse('$baseUrl/generate-lc');
+    final request = http.MultipartRequest('POST', uri);
     
+    // Add Route Type
+    request.fields['route_type'] = routeType;
+
+    // Add files
+    for (var file in files) {
+      if (kIsWeb) {
+        if (file.bytes != null) {
+          request.files.add(http.MultipartFile.fromBytes('files', file.bytes!, filename: file.name));
+        }
+      } else {
+        if (file.path != null) {
+          request.files.add(await http.MultipartFile.fromPath('files', file.path!));
+        }
+      }
+    }
+
     try {
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          if (prompt != null) 'prompt': prompt,
-          if (beneficiary != null) 'beneficiary': beneficiary,
-          if (amount != null) 'amount': amount,
-          if (terms != null) 'terms': terms,
-        }),
-      );
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:ui';
 import '../../../data/datasources/remote/api_service.dart';
 
@@ -10,20 +11,89 @@ class WriteLCScreen extends StatefulWidget {
   State<WriteLCScreen> createState() => _WriteLCScreenState();
 }
 
-class _WriteLCScreenState extends State<WriteLCScreen> {
-  final _aiPromptController = TextEditingController();
-  final _beneficiaryController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _termsController = TextEditingController();
-  
-  bool _isGenerating = false;
+class _WriteLCScreenState extends State<WriteLCScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final ApiService _apiService = ApiService();
+  bool _isGenerating = false;
 
-  Future<void> _generateDraft() async {
-    final prompt = _aiPromptController.text.trim();
-    if (prompt.isEmpty) {
+  // File Lists for each category
+  List<PlatformFile> _maritimeFiles = [];
+  List<PlatformFile> _landFiles = [];
+  List<PlatformFile> _airFiles = [];
+  List<PlatformFile> _nationalFiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickFiles(List<PlatformFile> targetList) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result != null) {
+        setState(() {
+          targetList.addAll(result.files);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking files: $e");
+    }
+  }
+
+  void _removeFile(List<PlatformFile> list, PlatformFile file) {
+    setState(() {
+      list.remove(file);
+    });
+  }
+
+  List<PlatformFile> _getCurrentFiles() {
+    switch (_tabController.index) {
+      case 0:
+        return _maritimeFiles;
+      case 1:
+        return _landFiles;
+      case 2:
+        return _airFiles;
+      case 3:
+        return _nationalFiles;
+      default:
+        return [];
+    }
+  }
+
+  String _getRouteType() {
+    switch (_tabController.index) {
+      case 0:
+        return "Maritime";
+      case 1:
+        return "Land";
+      case 2:
+        return "Air";
+      case 3:
+        return "National";
+      default:
+        return "Maritime";
+    }
+  }
+
+  Future<void> _generateLC() async {
+    final files = _getCurrentFiles();
+    if (files.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please describe the deal first.")),
+        const SnackBar(content: Text("Please upload at least one document.")),
       );
       return;
     }
@@ -31,39 +101,18 @@ class _WriteLCScreenState extends State<WriteLCScreen> {
     setState(() => _isGenerating = true);
 
     try {
-      final data = await _apiService.generateLcDraft(prompt: prompt);
-      
-      setState(() {
-        if (data.containsKey('beneficiary') && data['beneficiary'] is Map) {
-             _beneficiaryController.text = data['beneficiary']['name'] ?? '';
-        } else {
-             _beneficiaryController.text = data['beneficiary']?.toString() ?? '';
-        }
-        _amountController.text = data['amount']?.toString() ?? '';
-        
-        // Prefer description of goods for the terms box, or fallback to terms
-        if (data.containsKey('description_of_goods')) {
-             _termsController.text = data['description_of_goods']?.toString() ?? '';
-        } else if (data.containsKey('terms')) {
-           _termsController.text = data['terms']?.toString() ?? '';
-        }
-      });
+      final lcData = await _apiService.generateLcDraft(
+        files: files,
+        routeType: _getRouteType(),
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Draft Generated Successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showSuccessDialog(lcData);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error: ${e.toString()}"),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -73,399 +122,297 @@ class _WriteLCScreenState extends State<WriteLCScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _aiPromptController.dispose();
-    _beneficiaryController.dispose();
-    _amountController.dispose();
-    _termsController.dispose();
-    super.dispose();
+  void _showSuccessDialog(Map<String, dynamic> lcData) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Dismiss",
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (ctx, anim1, anim2) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "LC Draft Generated!",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Your documents have been analyzed and a UCP 600 compliant LC has been drafted.",
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.push('/view-lc', extra: lcData);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3D3D),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text("View Letter of Credit"),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // HTML Design Colors
-    final Color primaryColor = const Color(0xFFFF3D3D);
-    final Color bgLight = const Color(0xFFF8F5F5);
-    final Color bgDark = const Color(0xFF230F0F);
-    
-    final Color backgroundColor = isDark ? bgDark : bgLight;
-    final Color cardColor = isDark ? const Color(0xFF230F0F).withOpacity(0.5) : const Color(0xFFFFFFFF).withOpacity(0.8);
-    final Color textColor = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF333333);
-    final Color borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE7DADA);
-    final Color inputBg = isDark ? const Color(0xFF230F0F) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final primaryColor = const Color(0xFFFF3D3D);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Stack(
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F5F7),
+      appBar: AppBar(
+        title: Text(
+          "Intelligent LC Generator",
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: textColor),
+          onPressed: () => context.pop(),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: primaryColor,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: primaryColor,
+          tabs: const [
+            Tab(icon: Icon(Icons.directions_boat), text: "Maritime"),
+            Tab(icon: Icon(Icons.local_shipping), text: "Land"),
+            Tab(icon: Icon(Icons.airplanemode_active), text: "Air"),
+            Tab(icon: Icon(Icons.flag), text: "National"),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Radial Gradient Background
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [primaryColor.withOpacity(0.15), Colors.transparent],
-                  stops: const [0.0, 1.0],
-                ),
-              ),
+          _buildUploadSection("Maritime Route", _maritimeFiles, isDark),
+          _buildUploadSection("Land Route", _landFiles, isDark),
+          _buildUploadSection("Air Route", _airFiles, isDark),
+          _buildUploadSection("National Route", _nationalFiles, isDark),
+        ],
+      ),
+      // Removed bottomNavigationBar to avoid conflicts with parent shell
+    );
+  }
+
+  Widget _buildUploadSection(
+    String title,
+    List<PlatformFile> files,
+    bool isDark,
+  ) {
+    final primaryColor = const Color(0xFFFF3D3D);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[900] : Colors.blue[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
             ),
-          ),
-          
-          SafeArea(
-            child: Column(
+            child: Row(
               children: [
-                // Top App Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: () => context.pop(),
-                        borderRadius: BorderRadius.circular(50),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          alignment: Alignment.center,
-                          child: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          "Write LC with AI",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.15,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
-
-                // Form Content
+                const Icon(Icons.info_outline, color: Colors.blue),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // AI Input Section
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: primaryColor.withOpacity(0.2)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.auto_awesome, color: primaryColor, size: 20),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "Describe your deal",
-                                          style: TextStyle(
-                                            color: primaryColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    TextField(
-                                      controller: _aiPromptController,
-                                      maxLines: 3,
-                                      style: TextStyle(color: textColor),
-                                      decoration: InputDecoration(
-                                        hintText: "E.g., LC for 50k USD to Acme Corp for steel pipes...",
-                                        hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
-                                        border: InputBorder.none,
-                                        isDense: true,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: ElevatedButton.icon(
-                                        onPressed: _isGenerating ? null : _generateDraft,
-                                        icon: _isGenerating 
-                                          ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                          : const Icon(Icons.bolt, size: 16),
-                                        label: Text(_isGenerating ? "Thinking..." : "Auto-Fill"),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColor,
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 24),
-                              Divider(color: borderColor),
-                              const SizedBox(height: 24),
-
-                              _buildLabel("Beneficiary Name", textColor),
-                              const SizedBox(height: 8),
-                              _buildInput(
-                                controller: _beneficiaryController,
-                                hint: "Enter beneficiary name", 
-                                borderColor: borderColor, 
-                                inputBg: inputBg, 
-                                textColor: textColor,
-                                focusColor: primaryColor
-                              ),
-                              
-                              const SizedBox(height: 24),
-
-                              _buildLabel("Amount", textColor),
-                              const SizedBox(height: 8),
-                              _buildInput(
-                                controller: _amountController,
-                                hint: "Enter amount", 
-                                borderColor: borderColor, 
-                                inputBg: inputBg, 
-                                textColor: textColor,
-                                focusColor: primaryColor
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              _buildLabel("Terms & Conditions", textColor),
-                              const SizedBox(height: 8),
-                              _buildInput(
-                                controller: _termsController,
-                                hint: "Enter terms and conditions", 
-                                borderColor: borderColor, 
-                                inputBg: inputBg, 
-                                textColor: textColor,
-                                focusColor: primaryColor,
-                                maxLines: 6,
-                              ),
-                              
-                              const SizedBox(height: 32),
-
-                              /* Generate LC Action - Real Backend Call */
-                              ElevatedButton(
-                                onPressed: () async {
-                                  // Call Backend to get Full UCP 600 Structure based on current inputs
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Drafting Formal Letter of Credit (UCP 600)...")),
-                                  );
-                                  
-                                  try {
-                                    final lcData = await _apiService.generateLcDraft(
-                                      beneficiary: _beneficiaryController.text,
-                                      amount: _amountController.text,
-                                      terms: _termsController.text
-                                    );
-
-                                    if (context.mounted) {
-                                      showGeneralDialog(
-                                        context: context,
-                                        barrierDismissible: true,
-                                        barrierLabel: "Dismiss",
-                                        transitionDuration: const Duration(milliseconds: 400),
-                                        pageBuilder: (ctx, anim1, anim2) {
-                                          return ScaleTransition(
-                                            scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
-                                            child: Dialog(
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                              backgroundColor: Theme.of(context).cardColor,
-                                              child: Padding(
-                                              padding: const EdgeInsets.all(24.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Container(
-                                                    padding: const EdgeInsets.all(16),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.green.withOpacity(0.1),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: const Icon(Icons.check_circle, color: Colors.green, size: 48),
-                                                  ),
-                                                  const SizedBox(height: 16),
-                                                  Text(
-                                                    "LC Generated Successfully",
-                                                    style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: textColor,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    "Your Letter of Credit is ready for review.",
-                                                    style: TextStyle(color: textColor.withOpacity(0.7)),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  const SizedBox(height: 24),
-                                                  
-                                                  // Open Button
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      onPressed: () {
-                                                        Navigator.pop(ctx);
-                                                        context.push('/view-lc', extra: lcData);
-                                                      },
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: primaryColor,
-                                                        foregroundColor: Colors.white,
-                                                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(12),
-                                                        ),
-                                                      ),
-                                                      child: const Text("Open Document", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  
-                                                  // Download Button
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: TextButton.icon(
-                                                      onPressed: () {
-                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                          const SnackBar(content: Text("Downloading PDF...")),
-                                                        );
-                                                      },
-                                                      icon: Icon(Icons.download, color: textColor),
-                                                      label: Text("Download PDF", style: TextStyle(color: textColor)),
-                                                      style: TextButton.styleFrom(
-                                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Error: $e")),
-                                    );
-                                  }
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                                foregroundColor: Colors.white,
-                                fixedSize: const Size.fromHeight(48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 4,
-                                shadowColor: primaryColor.withOpacity(0.3),
-                              ),
-                              child: const Text(
-                                "Generate LC",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.15,
-                                ),
-                              ),
-                            ),
-                            ],
-                          ),
-                        ),
-                      ),
+                  child: Text(
+                    "Upload all relevant docs (Invoice, Packing List, BL) for $title. Our AI will cross-reference them for discrepancies.",
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.blue[900],
+                      fontSize: 13,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          Text(
+            "Required Documents",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Upload Area
+          GestureDetector(
+            onTap: () => _pickFiles(files),
+            child: Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.grey.withOpacity(0.4),
+                  style: BorderStyle.none,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.cloud_upload_outlined,
+                    size: 48,
+                    color: isDark ? Colors.grey : const Color(0xFFFF3D3D),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Tap to Upload Files",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "PDF Support Only",
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // File List
+          if (files.isNotEmpty) ...[
+            ...files.map(
+              (file) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF3D3D).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.picture_as_pdf,
+                        color: Color(0xFFFF3D3D),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            file.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            "${(file.size / 1024).toStringAsFixed(1)} KB",
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => _removeFile(files, file),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // Action Button (Moved inside ScrollView)
+          ElevatedButton.icon(
+            onPressed: _isGenerating ? null : _generateLC,
+            icon: _isGenerating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(
+              _isGenerating ? "Analyzing Documents..." : "Generate Perfect LC",
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+
+          // Extra bottom padding
+          const SizedBox(height: 48),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text, Color color) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: color,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
-  Widget _buildInput({
-    required TextEditingController controller,
-    required String hint, 
-    required Color borderColor, 
-    required Color inputBg, 
-    required Color textColor,
-    required Color focusColor,
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      style: TextStyle(
-        color: textColor,
-        fontSize: 16,
-        fontWeight: FontWeight.normal,
-      ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: inputBg,
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF8E8E93)),
-        contentPadding: const EdgeInsets.all(15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: focusColor),
-        ),
       ),
     );
   }

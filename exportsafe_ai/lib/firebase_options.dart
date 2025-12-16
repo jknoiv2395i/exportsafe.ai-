@@ -24,13 +24,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDummyKeyForWeb',
-    appId: '1:123456789:web:abcdef1234567890',
-    messagingSenderId: '123456789',
-    projectId: 'exportsafe-ai',
-    authDomain: 'exportsafe-ai.firebaseapp.com',
-    databaseURL: 'https://exportsafe-ai.firebaseio.com',
-    storageBucket: 'exportsafe-ai.appspot.com',
+    apiKey: 'AIzaSyCMqeALFDQY--F0e-ZaMjIgzaEtwzJLo-s',
+    appId: '1:1013397762150:web:19ec2b525a90b452227da7',
+    messagingSenderId: '1013397762150',
+    projectId: 'exportsafe-6b942',
+    authDomain: 'exportsafe-6b942.firebaseapp.com',
+    storageBucket: 'exportsafe-6b942.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
