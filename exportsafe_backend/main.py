@@ -402,20 +402,55 @@ async def generate_lc(
         
         for model_name in models_to_try:
             try:
-                print(f"Architect Drafting LC (Model: {model_name})...")
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    generation_config=genai.GenerationConfig(
-                        response_mime_type="application/json",
-                        response_schema=LCResponse
-                    )
-                )
+                # Direct REST API Fallback
+                import requests
                 
-                response = model.generate_content(final_prompt)
+                print(f"Architect Drafting LC (REST API - Model: {model_name})...")
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
                 
-                if response.text:
-                    clean_json = response.text
-                    # Robust JSON extraction: Find first '{' and last '}'
+                payload = {
+                    "contents": [{
+                        "parts": [{"text": final_prompt}]
+                    }],
+                    "generationConfig": {
+                        "response_mime_type": "application/json",
+                        "response_schema": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "lc_number": {"type": "STRING"},
+                                "issue_date": {"type": "STRING"},
+                                "expiry_date": {"type": "STRING"},
+                                "expiry_place": {"type": "STRING"},
+                                "applicant": {"type": "OBJECT", "properties": {"name": {"type": "STRING"}, "address": {"type": "STRING"}}},
+                                "beneficiary": {"type": "OBJECT", "properties": {"name": {"type": "STRING"}, "address": {"type": "STRING"}}},
+                                "issuing_bank": {"type": "OBJECT", "properties": {"name": {"type": "STRING"}, "address": {"type": "STRING"}, "swift_code": {"type": "STRING"}}},
+                                "currency": {"type": "STRING"},
+                                "amount": {"type": "STRING"},
+                                "description_of_goods": {"type": "STRING"},
+                                "incoterms": {"type": "STRING"},
+                                "shipment_details": {"type": "OBJECT", "properties": {
+                                    "port_of_loading": {"type": "STRING"},
+                                    "port_of_discharge": {"type": "STRING"},
+                                    "latest_shipment_date": {"type": "STRING"},
+                                    "partial_shipment": {"type": "STRING"},
+                                    "transshipment": {"type": "STRING"}
+                                }},
+                                "required_documents": {"type": "ARRAY", "items": {"type": "STRING"}},
+                                "additional_conditions": {"type": "ARRAY", "items": {"type": "STRING"}},
+                                "ucp600_statement": {"type": "STRING"}
+                            }
+                        }
+                    }
+                }
+                
+                response = requests.post(url, json=payload)
+                response_json = response.json()
+                
+                if "candidates" in response_json and response_json["candidates"]:
+                    raw_text = response_json["candidates"][0]["content"]["parts"][0]["text"]
+                    clean_json = raw_text
+                    
+                    # Robust JSON extraction
                     try:
                         start_idx = clean_json.find('{')
                         end_idx = clean_json.rfind('}')
@@ -424,9 +459,12 @@ async def generate_lc(
                         
                         return LCResponse.model_validate_json(clean_json)
                     except Exception as parse_error:
-                         print(f"JSON Parse Error: {parse_error} - Content: {response.text[:100]}...")
+                         print(f"JSON Parse Error: {parse_error}")
                          continue
-            
+                else:
+                    print(f"API Error: {response_json}")
+                    continue
+
             except Exception as e:
                 print(f"Model {model_name} failed: {str(e)}")
                 continue
