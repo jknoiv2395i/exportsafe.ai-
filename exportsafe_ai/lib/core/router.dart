@@ -4,6 +4,7 @@ import '../presentation/screens/auth/login_screen.dart';
 import '../presentation/screens/auth/signup_screen.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 import '../presentation/screens/audit/upload_screen.dart';
+import '../presentation/screens/dashboard/audit_history_screen.dart';
 import '../presentation/screens/audit/report_screen.dart';
 import '../presentation/screens/audit/write_lc_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
@@ -82,6 +83,10 @@ final router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/history',
+      builder: (context, state) => const AuditHistoryScreen(),
     ),
   ],
 );
