@@ -39,7 +39,7 @@ class AuditHistoryScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (!snapshot.hasData || snapshot.docs.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -55,11 +55,12 @@ class AuditHistoryScreen extends StatelessWidget {
                   );
                 }
 
+                final docs = snapshot.data!.docs;
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: snapshot.docs.length,
+                  itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final doc = snapshot.docs[index];
+                    final doc = docs[index];
                     final data = doc.data() as Map<String, dynamic>;
                     final isPass = data['status'] == 'PASS';
                     final date = (data['createdAt'] as Timestamp?)?.toDate();
