@@ -18,10 +18,10 @@ class _WriteLCScreenState extends State<WriteLCScreen>
   bool _isGenerating = false;
 
   // File Lists for each category
-  List<PlatformFile> _maritimeFiles = [];
-  List<PlatformFile> _landFiles = [];
-  List<PlatformFile> _airFiles = [];
-  List<PlatformFile> _nationalFiles = [];
+  final List<PlatformFile> _maritimeFiles = [];
+  final List<PlatformFile> _landFiles = [];
+  final List<PlatformFile> _airFiles = [];
+  final List<PlatformFile> _nationalFiles = [];
 
   @override
   void initState() {

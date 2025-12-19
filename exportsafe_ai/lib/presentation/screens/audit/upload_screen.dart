@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
-import 'dart:math' as math;
-import '../../../core/theme/app_theme.dart';
 import '../../providers/audit_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -105,7 +103,9 @@ class UploadScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                  disabledBackgroundColor: isDark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
                   disabledForegroundColor: Colors.grey[500],
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -116,7 +116,10 @@ class UploadScreen extends StatelessWidget {
                     ? const SizedBox(
                         height: 24,
                         width: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text(
                         'Analyze Documents',
@@ -128,9 +131,9 @@ class UploadScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Spacer for Bottom Nav Dock
-          const SizedBox(height: 80), 
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -189,8 +192,12 @@ class _UploadCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: isFileSelected ? Colors.white : (isDark ? Colors.black26 : Colors.white),
-                  borderRadius: BorderRadius.circular(12), // Slightly soft square
+                  color: isFileSelected
+                      ? Colors.white
+                      : (isDark ? Colors.black26 : Colors.white),
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ), // Slightly soft square
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -202,7 +209,9 @@ class _UploadCard extends StatelessWidget {
                 child: Icon(
                   isFileSelected ? Icons.check_circle : icon,
                   size: 40,
-                  color: isFileSelected ? Colors.green : const Color(0xFF2D3748), // Dark grey icon
+                  color: isFileSelected
+                      ? Colors.green
+                      : const Color(0xFF2D3748), // Dark grey icon
                 ),
               ),
               const SizedBox(height: 24),
@@ -223,13 +232,10 @@ class _UploadCard extends StatelessWidget {
               if (!isFileSelected)
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: subTextColor,
-                  ),
+                  style: TextStyle(fontSize: 14, color: subTextColor),
                 )
               else
-                 Text(
+                Text(
                   "${(file!.size / 1024).toStringAsFixed(1)} KB",
                   style: TextStyle(
                     fontSize: 14,
@@ -266,10 +272,12 @@ class _DashedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     Path path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        Radius.circular(radius),
-      ));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(radius),
+        ),
+      );
 
     Path dashedPath = Path();
     double dashWidth = 10.0;

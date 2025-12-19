@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../data/services/auth_service.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -27,9 +26,9 @@ class LoginScreen extends StatelessWidget {
                 'ExportSafe AI',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 48),
 
@@ -41,9 +40,9 @@ class LoginScreen extends StatelessWidget {
                     // await AuthService().signInWithGoogle();
                     context.go('/dashboard');
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Login Failed: $e')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Login Failed: $e')));
                   }
                 },
                 icon: const Icon(Icons.login),
@@ -54,7 +53,7 @@ class LoginScreen extends StatelessWidget {
                   side: const BorderSide(color: Colors.grey),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
               const Row(
                 children: [

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/audit_provider.dart';
-import '../../../data/models/audit_report.dart';
 
 class ReportScreen extends StatelessWidget {
   final String auditId; // Not used yet, but good for future
@@ -134,9 +133,17 @@ class ReportScreen extends StatelessWidget {
                                 ),
                                 const Divider(),
                                 const SizedBox(height: 8),
-                                _buildComparisonRow('LC Says:', discrepancy.lcValue, Colors.grey.shade700),
+                                _buildComparisonRow(
+                                  'LC Says:',
+                                  discrepancy.lcValue,
+                                  Colors.grey.shade700,
+                                ),
                                 const SizedBox(height: 4),
-                                _buildComparisonRow('Invoice Says:', discrepancy.invValue, AppTheme.errorColor),
+                                _buildComparisonRow(
+                                  'Invoice Says:',
+                                  discrepancy.invValue,
+                                  AppTheme.errorColor,
+                                ),
                                 const SizedBox(height: 12),
                                 Container(
                                   padding: const EdgeInsets.all(8),
@@ -146,12 +153,19 @@ class ReportScreen extends StatelessWidget {
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                                      const Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           discrepancy.reason,
-                                          style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontStyle: FontStyle.italic,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -180,7 +194,9 @@ class ReportScreen extends StatelessWidget {
                       },
                       icon: const Icon(Icons.download),
                       label: const Text('Download PDF'),
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -192,7 +208,9 @@ class ReportScreen extends StatelessWidget {
                       icon: const Icon(Icons.share),
                       label: const Text('Share'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366), // WhatsApp Green
+                        backgroundColor: const Color(
+                          0xFF25D366,
+                        ), // WhatsApp Green
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
@@ -215,7 +233,10 @@ class ReportScreen extends StatelessWidget {
           width: 100,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey,
+            ),
           ),
         ),
         Expanded(

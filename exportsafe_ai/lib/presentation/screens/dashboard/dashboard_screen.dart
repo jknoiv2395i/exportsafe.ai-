@@ -3,9 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/dashboard_provider.dart';
-import '../../../core/theme/app_theme.dart';
 import 'dart:async';
-import '../audit/forensic_upload_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

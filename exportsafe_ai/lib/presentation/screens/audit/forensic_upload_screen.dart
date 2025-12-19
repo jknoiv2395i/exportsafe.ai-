@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:ui';
 import '../../providers/forensic_audit_provider.dart';
 
 // Copy of UploadScreen but using ForensicAuditProvider
@@ -25,16 +24,21 @@ class _ForensicUploadView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<ForensicAuditProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Theme Colors
     final bgColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F7);
-    const primaryColor = Color(0xFF34C759); // Green for Forensic/Compliance theme distinction
+    const primaryColor = Color(
+      0xFF34C759,
+    ); // Green for Forensic/Compliance theme distinction
     final textColor = isDark ? Colors.white : const Color(0xFF1D1D1F);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text('Forensic Audit Upload', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Forensic Audit Upload',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: bgColor,
         elevation: 0,
@@ -56,7 +60,7 @@ class _ForensicUploadView extends StatelessWidget {
                     style: TextStyle(color: Colors.grey, height: 1.5),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   _UploadCard(
                     title: 'Letter of Credit',
                     subtitle: 'Upload PDF',
@@ -75,14 +79,14 @@ class _ForensicUploadView extends StatelessWidget {
                     file: provider.invoiceFile,
                     primaryColor: primaryColor,
                     isDark: isDark,
-                  )
+                  ),
                 ],
               ),
             ),
           ),
-           Container(
+          Container(
             padding: const EdgeInsets.all(24),
-            color: isDark ?  Colors.black12 : Colors.white,
+            color: isDark ? Colors.black12 : Colors.white,
             child: SizedBox(
               width: double.infinity,
               height: 56,
@@ -94,11 +98,19 @@ class _ForensicUploadView extends StatelessWidget {
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: provider.isProcessing
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Start Forensic Audit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Start Forensic Audit',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -140,16 +152,16 @@ class _UploadCard extends StatelessWidget {
           border: Border.all(
             color: isFileSelected ? primaryColor : Colors.grey.withOpacity(0.2),
             width: isFileSelected ? 2 : 1,
-            style: isFileSelected ? BorderStyle.solid : BorderStyle.none
+            style: isFileSelected ? BorderStyle.solid : BorderStyle.none,
           ),
-           boxShadow: [
-             if (!isFileSelected)
+          boxShadow: [
+            if (!isFileSelected)
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
-              )
-            ],
+              ),
+          ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Row(
@@ -158,7 +170,9 @@ class _UploadCard extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: isFileSelected ? primaryColor.withOpacity(0.1) : Colors.grey[100],
+                color: isFileSelected
+                    ? primaryColor.withOpacity(0.1)
+                    : Colors.grey[100],
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -184,7 +198,9 @@ class _UploadCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isFileSelected ? '${(file!.size / 1024).toStringAsFixed(1)} KB' : subtitle,
+                    isFileSelected
+                        ? '${(file!.size / 1024).toStringAsFixed(1)} KB'
+                        : subtitle,
                     style: TextStyle(color: Colors.grey[500], fontSize: 13),
                   ),
                 ],

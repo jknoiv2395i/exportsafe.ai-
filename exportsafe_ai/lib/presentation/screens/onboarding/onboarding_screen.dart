@@ -42,15 +42,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Common colors based on design
     final primaryColor = const Color(0xFFFF3D3D);
-    final bgLight = const Color(0xFFFFFFFF); // Page 1 uses white, Page 3 uses f8f5f5
+    final bgLight = const Color(
+      0xFFFFFFFF,
+    ); // Page 1 uses white, Page 3 uses f8f5f5
     final bgDark = const Color(0xFF230F0F);
-    
+
     return Scaffold(
       backgroundColor: isDark ? bgDark : bgLight,
       body: Stack(
         children: [
           // Background Gradients (Shared across pages with slight variations)
-           Positioned(
+          Positioned(
             top: -100,
             right: -100,
             child: Container(
@@ -59,10 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
+                  colors: [primaryColor.withOpacity(0.1), Colors.transparent],
                 ),
               ),
             ),
@@ -76,10 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.05),
-                    Colors.transparent,
-                  ],
+                  colors: [primaryColor.withOpacity(0.05), Colors.transparent],
                 ),
               ),
             ),
@@ -95,10 +91,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               // PAGE 1: Intro
               _buildIntroPage(isDark, primaryColor),
-              
+
               // PAGE 2: Features
               _buildFeaturesPage(isDark, primaryColor),
-              
+
               // PAGE 3: Permissions
               _buildPermissionsPage(isDark, primaryColor),
             ],
@@ -128,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -140,9 +136,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               _buildDot(false, primaryColor, isDark),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Text
           Text(
             "Analyze Smarter, Act Faster",
@@ -164,18 +160,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 1.5,
             ),
           ),
-          
+
           const SizedBox(height: 48),
 
           // Feature Highlights (Small)
-          _buildMiniFeature(Icons.speed, "Boost Productivity", "Automate routine tasks.", isDark, primaryColor),
+          _buildMiniFeature(
+            Icons.speed,
+            "Boost Productivity",
+            "Automate routine tasks.",
+            isDark,
+            primaryColor,
+          ),
           const SizedBox(height: 16),
-          _buildMiniFeature(Icons.verified, "Enhance Accuracy", "Reduce errors with intelligent validation.", isDark, primaryColor),
+          _buildMiniFeature(
+            Icons.verified,
+            "Enhance Accuracy",
+            "Reduce errors with intelligent validation.",
+            isDark,
+            primaryColor,
+          ),
           const SizedBox(height: 16),
-          _buildMiniFeature(Icons.leaderboard, "Drive Better Decisions", "Gain deeper understanding instantly.", isDark, primaryColor),
-          
+          _buildMiniFeature(
+            Icons.leaderboard,
+            "Drive Better Decisions",
+            "Gain deeper understanding instantly.",
+            isDark,
+            primaryColor,
+          ),
+
           const Spacer(),
-          
+
           // Button
           SizedBox(
             width: double.infinity,
@@ -185,13 +199,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 4,
                 shadowColor: primaryColor.withOpacity(0.25),
               ),
               child: Text(
                 "Get Started",
-                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -201,15 +220,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Text(
                 "Already have an account? ",
-                 style: GoogleFonts.inter(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
               ),
               GestureDetector(
                 onTap: () => context.go('/login'),
                 child: Text(
                   "Log In",
                   style: GoogleFonts.inter(
-                    fontSize: 14, 
-                    fontWeight: FontWeight.bold, 
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : const Color(0xFF181010),
                     decoration: TextDecoration.underline,
                   ),
@@ -223,7 +245,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildMiniFeature(IconData icon, String title, String subtitle, bool isDark, Color primaryColor) {
+  Widget _buildMiniFeature(
+    IconData icon,
+    String title,
+    String subtitle,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -262,7 +290,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          
           Text(
             "Unlock Powerful Features",
             textAlign: TextAlign.center,
@@ -282,18 +309,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
-          
-          const SizedBox(height: 32),
-          
-          // Features List
-          _buildLargeFeature(Icons.verified_user, "Automated Compliance", "Stay regulation-ready with instant checks against global trade databases.", isDark, primaryColor),
-          const SizedBox(height: 24),
-          _buildLargeFeature(Icons.psychology, "AI-Powered Drafting", "Generate complex export documents in seconds using advanced AI models.", isDark, primaryColor),
-          const SizedBox(height: 24),
-          _buildLargeFeature(Icons.notifications_active, "Real-time Alerts", "Get instant notifications on shipment status updates and payment milestones.", isDark, primaryColor),
 
           const SizedBox(height: 32),
-          
+
+          // Features List
+          _buildLargeFeature(
+            Icons.verified_user,
+            "Automated Compliance",
+            "Stay regulation-ready with instant checks against global trade databases.",
+            isDark,
+            primaryColor,
+          ),
+          const SizedBox(height: 24),
+          _buildLargeFeature(
+            Icons.psychology,
+            "AI-Powered Drafting",
+            "Generate complex export documents in seconds using advanced AI models.",
+            isDark,
+            primaryColor,
+          ),
+          const SizedBox(height: 24),
+          _buildLargeFeature(
+            Icons.notifications_active,
+            "Real-time Alerts",
+            "Get instant notifications on shipment status updates and payment milestones.",
+            isDark,
+            primaryColor,
+          ),
+
+          const SizedBox(height: 32),
+
           // Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -306,7 +351,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
           const SizedBox(height: 32),
-          
+
           // Buttons
           SizedBox(
             width: double.infinity,
@@ -316,13 +361,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 4,
                 shadowColor: primaryColor.withOpacity(0.25),
               ),
               child: Text(
                 "Next",
-                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -348,7 +398,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-    Widget _buildLargeFeature(IconData icon, String title, String subtitle, bool isDark, Color primaryColor) {
+  Widget _buildLargeFeature(
+    IconData icon,
+    String title,
+    String subtitle,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -390,7 +446,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-
   // --- PAGE 3: Permissions ---
   Widget _buildPermissionsPage(bool isDark, Color primaryColor) {
     return Padding(
@@ -398,7 +453,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          
           Text(
             "Grant Essential Permissions",
             textAlign: TextAlign.center,
@@ -418,7 +472,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: isDark ? Colors.grey[400] : const Color(0xFF4A4A4A),
             ),
           ),
-          
+
           const SizedBox(height: 32),
 
           // Permission Toggles
@@ -432,7 +486,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             primaryColor,
           ),
           const SizedBox(height: 16),
-           _buildPermissionItem(
+          _buildPermissionItem(
             Icons.notifications,
             "Notifications",
             "Get real-time alerts on compliance risks.",
@@ -442,7 +496,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             primaryColor,
           ),
           const SizedBox(height: 16),
-           _buildPermissionItem(
+          _buildPermissionItem(
             Icons.folder,
             "Storage Access",
             "Save and organize your export documentation.",
@@ -452,23 +506,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             primaryColor,
           ),
 
-           const SizedBox(height: 24),
-           Row(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               Icon(Icons.lock, size: 16, color: Colors.grey[500]),
-               const SizedBox(width: 6),
-               Text(
-                 "Your data is encrypted. Permissions can be changed later.",
-                 style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
-                 overflow: TextOverflow.ellipsis,
-               ),
-             ],
-           ),
-          
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock, size: 16, color: Colors.grey[500]),
+              const SizedBox(width: 6),
+              Text(
+                "Your data is encrypted. Permissions can be changed later.",
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+
           const SizedBox(height: 32),
-          
-           // Indicators
+
+          // Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -490,17 +544,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)), // Rounded full
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ), // Rounded full
                 elevation: 4,
                 shadowColor: primaryColor.withOpacity(0.25),
               ),
               child: Text(
                 "Allow & Continue",
-                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-           const SizedBox(height: 12),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -522,7 +581,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPermissionItem(IconData icon, String title, String subtitle, bool value, Function(bool) onChanged, bool isDark, Color primaryColor) {
+  Widget _buildPermissionItem(
+    IconData icon,
+    String title,
+    String subtitle,
+    bool value,
+    Function(bool) onChanged,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -545,7 +612,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: isDark ? primaryColor.withOpacity(0.2) : const Color(0xFFFFF0F0),
+              color: isDark
+                  ? primaryColor.withOpacity(0.2)
+                  : const Color(0xFFFFF0F0),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: primaryColor, size: 24),
@@ -576,13 +645,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: primaryColor,
+            activeThumbColor: primaryColor,
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildDot(bool isActive, Color primaryColor, [bool isDark = false]) {
     return AnimatedContainer(
@@ -590,9 +658,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       width: isActive ? 32 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive 
-          ? primaryColor 
-          : (isDark ? Colors.grey[700] : Colors.grey[300]),
+        color: isActive
+            ? primaryColor
+            : (isDark ? Colors.grey[700] : Colors.grey[300]),
         borderRadius: BorderRadius.circular(4),
       ),
     );

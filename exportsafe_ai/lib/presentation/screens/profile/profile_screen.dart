@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -9,9 +8,11 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine if dark mode is active (for theme-aware colors)
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Colors from the design adapted to Flutter
-    final bgColor = isDark ? const Color(0xFF230f0f) : const Color(0xFFF8F5F5); // background-light/dark
+    final bgColor = isDark
+        ? const Color(0xFF230f0f)
+        : const Color(0xFFF8F5F5); // background-light/dark
     final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
     final primaryColor = const Color(0xFFFF3B3B); // Brand Red
     final textColor = isDark ? Colors.white : Colors.grey[900]!;
@@ -26,15 +27,19 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         leading: Builder(
           builder: (context) {
-             // Only show back button if we can pop, otherwise it's a main tab
+            // Only show back button if we can pop, otherwise it's a main tab
             if (context.canPop()) {
               return IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 24),
+                icon: Icon(
+                  Icons.arrow_back_ios_new,
+                  color: textColor,
+                  size: 24,
+                ),
                 onPressed: () => context.pop(),
               );
             }
             return const SizedBox.shrink();
-          }
+          },
         ),
         centerTitle: true,
         title: Text(
@@ -48,7 +53,9 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 120), // Padding for nav bar avoidance
+        padding: const EdgeInsets.only(
+          bottom: 120,
+        ), // Padding for nav bar avoidance
         child: Column(
           children: [
             // Profile Header (Avatar + Name)
@@ -56,13 +63,15 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: [
-                   Container(
+                  Container(
                     width: 128,
                     height: 128,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: const DecorationImage(
-                        image: NetworkImage("https://lh3.googleusercontent.com/aida-public/AB6AXuAxB4VVtHMPYketmT03FmUpnREoixZ5xhN72dF16RSirTxuD6ESSiOUeqHt-ZUtJ8h0tSHICHdGLsmS0fjPIR6zUFdNWbXwyqBQrrEEQBkcyF7aN_PsGBvWB2o_Q5zVYBkmELmiJFaL5lvIldqCmcKgwResyMUHeeXhqnlU4kf0CN3iX6pJfbnzMtQ391EZIjred9EWvldCBB2t-U86v0wXoHfgwBgdAbx05Z_yyglzp9rQizBIUoGYlT-p4A5PTjF7Ota7_Li0Lek"),
+                        image: NetworkImage(
+                          "https://lh3.googleusercontent.com/aida-public/AB6AXuAxB4VVtHMPYketmT03FmUpnREoixZ5xhN72dF16RSirTxuD6ESSiOUeqHt-ZUtJ8h0tSHICHdGLsmS0fjPIR6zUFdNWbXwyqBQrrEEQBkcyF7aN_PsGBvWB2o_Q5zVYBkmELmiJFaL5lvIldqCmcKgwResyMUHeeXhqnlU4kf0CN3iX6pJfbnzMtQ391EZIjred9EWvldCBB2t-U86v0wXoHfgwBgdAbx05Z_yyglzp9rQizBIUoGYlT-p4A5PTjF7Ota7_Li0Lek",
+                        ),
                         fit: BoxFit.cover,
                       ),
                       // Fallback color if image fails
@@ -82,10 +91,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Global Trade Corp.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: subTextColor,
-                    ),
+                    style: TextStyle(fontSize: 16, color: subTextColor),
                   ),
                 ],
               ),
@@ -110,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
                   isLast: false,
                   borderColor: borderColor,
                 ),
-                 _buildInfoRow(
+                _buildInfoRow(
                   icon: Icons.mail_outline,
                   label: 'Email',
                   value: 'a.chen@globaltradecorp.com',
@@ -121,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
                   isLast: false,
                   borderColor: borderColor,
                 ),
-                 _buildInfoRow(
+                _buildInfoRow(
                   icon: Icons.phone_outlined,
                   label: 'Phone Number',
                   value: '+1 (555) 123-4567',
@@ -154,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
                   isLast: false,
                   borderColor: borderColor,
                 ),
-                 _buildInfoRow(
+                _buildInfoRow(
                   icon: Icons.business_center_outlined,
                   label: 'Industry',
                   value: 'International Trade & Finance',
@@ -168,7 +174,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
 
-             const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Preferences Section
             _buildSectionHeader('Preferences', textColor),
@@ -185,7 +191,7 @@ class ProfileScreen extends StatelessWidget {
                   isLast: false,
                   borderColor: borderColor,
                 ),
-                 _buildNavRow(
+                _buildNavRow(
                   icon: Icons.language_outlined,
                   label: 'Language',
                   value: 'English',
@@ -236,7 +242,7 @@ class ProfileScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       child: Column(children: children),
@@ -272,8 +278,8 @@ class ProfileScreen extends StatelessWidget {
             child: Icon(icon, color: primaryColor, size: 24),
           ),
           const SizedBox(width: 16),
-           // Text Info
-           Expanded(
+          // Text Info
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -287,25 +293,21 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: textColor,
-                    height: 1.3,
-                  ),
+                  style: TextStyle(fontSize: 16, color: textColor, height: 1.3),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-           ),
-           if (showEdit)
-             Icon(Icons.edit_outlined, color: primaryColor, size: 24),
+          ),
+          if (showEdit)
+            Icon(Icons.edit_outlined, color: primaryColor, size: 24),
         ],
       ),
     );
   }
 
-   Widget _buildNavRow({
+  Widget _buildNavRow({
     required IconData icon,
     required String label,
     String? value,
@@ -320,7 +322,9 @@ class ProfileScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: isLast ? null : Border(bottom: BorderSide(color: borderColor)),
+          border: isLast
+              ? null
+              : Border(bottom: BorderSide(color: borderColor)),
         ),
         child: Row(
           children: [
@@ -335,8 +339,8 @@ class ProfileScreen extends StatelessWidget {
               child: Icon(icon, color: primaryColor, size: 24),
             ),
             const SizedBox(width: 16),
-             // Text Info
-             Expanded(
+            // Text Info
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -350,17 +354,14 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   if (value != null)
-                     Text(
+                    Text(
                       value,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: subTextColor,
-                      ),
+                      style: TextStyle(fontSize: 14, color: subTextColor),
                     ),
                 ],
               ),
-             ),
-             Icon(Icons.chevron_right, color: subTextColor, size: 24),
+            ),
+            Icon(Icons.chevron_right, color: subTextColor, size: 24),
           ],
         ),
       ),

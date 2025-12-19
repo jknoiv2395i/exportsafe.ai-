@@ -10,17 +10,23 @@ class SettingsScreen extends StatelessWidget {
     // Colors from design
     const primaryColor = AppTheme.primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final backgroundColor = isDark ? const Color(0xFF230F0F) : const Color(0xFFF8F5F5);
-    final cardColor = isDark ? const Color(0xFF230F0F).withOpacity(0.5) : Colors.white.withOpacity(0.5);
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
+
+    final backgroundColor = isDark
+        ? const Color(0xFF230F0F)
+        : const Color(0xFFF8F5F5);
+    final cardColor = isDark
+        ? const Color(0xFF230F0F).withOpacity(0.5)
+        : Colors.white.withOpacity(0.5);
+    final textColor = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF1F2937);
     final subTextColor = isDark ? Colors.grey[400]! : Colors.grey[500]!;
-    
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Stack(
         children: [
-           // Background Gradient
+          // Background Gradient
           Positioned(
             top: 0,
             left: 0,
@@ -31,21 +37,21 @@ class SettingsScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
+                  colors: [primaryColor.withOpacity(0.1), Colors.transparent],
                 ),
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Column(
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
@@ -67,7 +73,7 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // Main Content
                 Expanded(
                   child: ListView(
@@ -75,122 +81,122 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       // Account Settings
                       _buildSectionHeader('Account Settings', subTextColor),
-                      _buildSettingsGroup(
-                        cardColor,
-                        [
-                          _buildSettingsTile(
-                            icon: Icons.person,
-                            title: 'Edit Profile',
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isFirst: true,
-                          ),
-                          _buildSettingsTile(
-                            icon: Icons.lock,
-                            title: 'Change Password',
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                          ),
-                          _buildSettingsTile(
-                            icon: Icons.credit_card,
-                            title: 'Manage Subscription',
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isLast: true,
-                          ),
-                        ],
-                      ),
+                      _buildSettingsGroup(cardColor, [
+                        _buildSettingsTile(
+                          icon: Icons.person,
+                          title: 'Edit Profile',
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isFirst: true,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.lock,
+                          title: 'Change Password',
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.credit_card,
+                          title: 'Manage Subscription',
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isLast: true,
+                        ),
+                      ]),
                       const SizedBox(height: 24),
-                      
+
                       // App Preferences
                       _buildSectionHeader('App Preferences', subTextColor),
-                      _buildSettingsGroup(
-                        cardColor,
-                        [
-                          _buildSettingsTile(
-                            icon: Icons.notifications,
-                            title: 'Notifications',
-                            trailing: Switch(
-                              value: true,
-                              onChanged: (v) {},
-                              activeColor: primaryColor,
-                            ),
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isFirst: true,
+                      _buildSettingsGroup(cardColor, [
+                        _buildSettingsTile(
+                          icon: Icons.notifications,
+                          title: 'Notifications',
+                          trailing: Switch(
+                            value: true,
+                            onChanged: (v) {},
+                            activeThumbColor: primaryColor,
                           ),
-                          _buildSettingsTile(
-                            icon: Icons.language,
-                            title: 'Language',
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('English', style: TextStyle(color: subTextColor)),
-                                const SizedBox(width: 4),
-                                Icon(Icons.chevron_right, color: subTextColor),
-                              ],
-                            ),
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isFirst: true,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.language,
+                          title: 'Language',
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'English',
+                                style: TextStyle(color: subTextColor),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.chevron_right, color: subTextColor),
+                            ],
                           ),
-                          _buildSettingsTile(
-                            icon: Icons.contrast,
-                            title: 'Theme',
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Light', style: TextStyle(color: subTextColor)),
-                                const SizedBox(width: 4),
-                                Icon(Icons.chevron_right, color: subTextColor),
-                              ],
-                            ),
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isLast: true,
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.contrast,
+                          title: 'Theme',
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Light',
+                                style: TextStyle(color: subTextColor),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.chevron_right, color: subTextColor),
+                            ],
                           ),
-                        ],
-                      ),
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isLast: true,
+                        ),
+                      ]),
                       const SizedBox(height: 24),
-                      
+
                       // Legal & About
                       _buildSectionHeader('Legal & About', subTextColor),
-                      _buildSettingsGroup(
-                        cardColor,
-                        [
-                          _buildSettingsTile(
-                            icon: Icons.shield,
-                            title: 'Privacy Policy',
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isFirst: true,
+                      _buildSettingsGroup(cardColor, [
+                        _buildSettingsTile(
+                          icon: Icons.shield,
+                          title: 'Privacy Policy',
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isFirst: true,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.gavel,
+                          title: 'Terms of Service',
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                        ),
+                        _buildSettingsTile(
+                          icon: Icons.info,
+                          title: 'About ExportSafe AI',
+                          trailing: Text(
+                            'v1.0.0',
+                            style: TextStyle(color: subTextColor, fontSize: 13),
                           ),
-                          _buildSettingsTile(
-                            icon: Icons.gavel,
-                            title: 'Terms of Service',
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                          ),
-                          _buildSettingsTile(
-                            icon: Icons.info,
-                            title: 'About ExportSafe AI',
-                            trailing: Text('v1.0.0', style: TextStyle(color: subTextColor, fontSize: 13)),
-                            onTap: () {},
-                            primaryColor: primaryColor,
-                            textColor: textColor,
-                             isLast: true,
-                          ),
-                        ],
-                      ),
+                          onTap: () {},
+                          primaryColor: primaryColor,
+                          textColor: textColor,
+                          isLast: true,
+                        ),
+                      ]),
                       const SizedBox(height: 24),
-                      
+
                       // Logout
                       Container(
                         decoration: BoxDecoration(
@@ -205,7 +211,9 @@ class SettingsScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: primaryColor.withOpacity(0.5)),
+                              border: Border.all(
+                                color: primaryColor.withOpacity(0.5),
+                              ),
                             ),
                             child: const Text(
                               'Logout',
@@ -250,9 +258,7 @@ class SettingsScreen extends StatelessWidget {
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
@@ -287,15 +293,13 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Icon(icon, color: primaryColor, size: 20),
           ),
-          title: Text(
-           title,
-           style: TextStyle(
-             color: textColor,
-             fontSize: 15,
-           ),
+          title: Text(title, style: TextStyle(color: textColor, fontSize: 15)),
+          trailing:
+              trailing ?? Icon(Icons.chevron_right, color: Colors.grey[400]),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
           ),
-          trailing: trailing ?? Icon(Icons.chevron_right, color: Colors.grey[400]),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         ),
         if (!isLast)
           Divider(

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../../providers/audit_provider.dart';
-import '../../../data/models/audit_report.dart';
 
 class ReportScreen extends StatelessWidget {
   final String? auditId;
@@ -19,15 +18,15 @@ class ReportScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (report == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final isSuccess = report.status == 'PASS';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFFFFFF),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFFFFFFF),
       body: Stack(
         children: [
           // Background Blobs
@@ -70,18 +69,23 @@ class ReportScreen extends StatelessWidget {
               children: [
                 // Back Button (Custom)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
                       onPressed: () => context.go('/dashboard'),
                     ),
                   ),
                 ),
 
                 const Spacer(), // Push content to center vertically
-
                 // Central Icon & Text
                 Column(
                   mainAxisSize: MainAxisSize.min,
@@ -97,7 +101,9 @@ class ReportScreen extends StatelessWidget {
                             child: Icon(
                               Icons.description,
                               size: 100,
-                              color: isDark ? Colors.grey[700] : const Color(0xFF334155),
+                              color: isDark
+                                  ? Colors.grey[700]
+                                  : const Color(0xFF334155),
                             ),
                           ),
                           // Badge
@@ -108,15 +114,21 @@ class ReportScreen extends StatelessWidget {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: isSuccess ? primaryRed : const Color(0xFFB00020),
+                                color: isSuccess
+                                    ? primaryRed
+                                    : const Color(0xFFB00020),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: (isSuccess ? primaryRed : const Color(0xFFB00020)).withOpacity(0.4),
+                                    color:
+                                        (isSuccess
+                                                ? primaryRed
+                                                : const Color(0xFFB00020))
+                                            .withOpacity(0.4),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
-                                  )
-                                ]
+                                  ),
+                                ],
                               ),
                               child: Icon(
                                 isSuccess ? Icons.check : Icons.close,
@@ -129,7 +141,7 @@ class ReportScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Title
                     Text(
                       isSuccess ? "File Validated!" : "Validation Failed",
@@ -140,18 +152,20 @@ class ReportScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Subtitle
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40),
                       child: Text(
-                        isSuccess 
-                          ? "All legal and compliance checks passed successfully."
-                          : "Critical discrepancies were found during the audit process.",
+                        isSuccess
+                            ? "All legal and compliance checks passed successfully."
+                            : "Critical discrepancies were found during the audit process.",
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 16,
-                          color: isDark ? Colors.grey[400] : const Color(0xFF6B7280),
+                          color: isDark
+                              ? Colors.grey[400]
+                              : const Color(0xFF6B7280),
                           height: 1.5,
                         ),
                       ),
@@ -160,7 +174,6 @@ class ReportScreen extends StatelessWidget {
                 ),
 
                 const Spacer(), // Push Bottom Card down
-
                 // Bottom Card
                 Container(
                   width: double.infinity,
@@ -188,33 +201,39 @@ class ReportScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              isSuccess ? "No Discrepancies Found" : "${report.discrepancies.length} Discrepancies Found",
+                              isSuccess
+                                  ? "No Discrepancies Found"
+                                  : "${report.discrepancies.length} Discrepancies Found",
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF333333),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF333333),
                               ),
                             ),
                           ),
                           Icon(
                             isSuccess ? Icons.check_circle : Icons.error,
-                            color: isSuccess ? primaryRed : const Color(0xFFB00020),
+                            color: isSuccess
+                                ? primaryRed
+                                : const Color(0xFFB00020),
                             size: 28,
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Button
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
                           onPressed: () {
-                             // Handle export or view details
-                             provider.clearFiles();
-                             context.go('/dashboard');
+                            // Handle export or view details
+                            provider.clearFiles();
+                            context.go('/dashboard');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryRed,
@@ -225,7 +244,9 @@ class ReportScreen extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            isSuccess ? 'Export Certificate' : 'Back to Dashboard',
+                            isSuccess
+                                ? 'Export Certificate'
+                                : 'Back to Dashboard',
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

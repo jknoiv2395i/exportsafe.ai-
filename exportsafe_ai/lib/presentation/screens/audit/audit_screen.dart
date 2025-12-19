@@ -92,9 +92,9 @@ class _AuditScreenState extends State<AuditScreen>
       setState(() {
         if (_progressValue < 0.9) {
           _progressValue += 0.15;
-          if (_progressValue > 0.3 && _progressValue < 0.5)
+          if (_progressValue > 0.3 && _progressValue < 0.5) {
             _progressStatus = "Extracting Text via OCR...";
-          else if (_progressValue > 0.5 && _progressValue < 0.7)
+          } else if (_progressValue > 0.5 && _progressValue < 0.7)
             _progressStatus = "Analyzing UCP 600 Compliance...";
           else if (_progressValue > 0.7)
             _progressStatus = "Cross-referencing Documents...";
@@ -393,7 +393,7 @@ class _AuditScreenState extends State<AuditScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              file != null ? file!.name : title,
+              file != null ? file.name : title,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -484,9 +484,9 @@ class _AuditScreenState extends State<AuditScreen>
         final disc = discrepancies[index];
         final severity = disc['severity'] as String? ?? "MINOR";
         Color borderColor = Colors.grey;
-        if (severity == "CRITICAL")
+        if (severity == "CRITICAL") {
           borderColor = Colors.red;
-        else if (severity == "MAJOR")
+        } else if (severity == "MAJOR")
           borderColor = Colors.orange;
 
         return Card(
