@@ -1,45 +1,160 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../data/services/auth_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Determine if dark mode is active (for theme-aware colors)
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
+class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthService _authService = AuthService();
+  User? _user;
+  Map<String, dynamic> _userData = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    final user = _authService.getCurrentUser();
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _userData = userDoc.data() ?? {};
+          _isLoading = false;
+        });
+      }
+    } else {
+      // Handle case where user is null (shouldn't happen in normal flow but safe to handle)
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updateField(String label, String key, String currentValue, {bool isAuthProfile = false}) async {
+    final TextEditingController controller = TextEditingController(text: currentValue);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit $label'),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'Enter $label',
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(context); // Close dialog
+                setState(() => _isLoading = true);
+
+                try {
+                  // Ensure we have a user
+                  if (_user == null) {
+                    _user = _authService.getCurrentUser();
+                    if (_user == null) {
+                       throw Exception('No active user found. Please restart the app.');
+                    }
+                  }
+
+                  if (isAuthProfile) {
+                    await _authService.updateProfile(displayName: controller.text.trim());
+                    await _user?.reload();
+                    _user = _authService.getCurrentUser();
+                  }
+
+                  // Always update Firestore for consistency
+                  if (_user != null) {
+                    await FirebaseFirestore.instance.collection('users').doc(_user!.uid).set({
+                      key: controller.text.trim(),
+                    }, SetOptions(merge: true));
+                  }
+
+                  if (mounted) {
+                     await _loadProfileData(); // Refresh all data
+                     ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('$label updated successfully!')),
+                    );
+                  }
+                } catch (e) {
+                   if (mounted) {
+                    setState(() => _isLoading = false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error updating $label: $e')),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // Colors from the design adapted to Flutter
-    final bgColor = isDark
-        ? const Color(0xFF230f0f)
-        : const Color(0xFFF8F5F5); // background-light/dark
+    final bgColor = isDark ? const Color(0xFF230f0f) : const Color(0xFFF8F5F5); 
     final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
-    final primaryColor = const Color(0xFFFF3B3B); // Brand Red
+    const primaryColor = Color(0xFFFF3B3B); // Brand Red
     final textColor = isDark ? Colors.white : Colors.grey[900]!;
     final subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
     final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+
+    // Resolve data
+    final displayName = _user?.displayName ?? _userData['displayName'] ?? 'Guest User';
+    final email = _user?.email ?? _userData['email'] ?? 'No Email';
+    final phone = _userData['phoneNumber'] ?? '+1 (555) 000-0000';
+    final companyName = _userData['companyName'] ?? 'Global Trade Corp.';
+    final industry = _userData['industry'] ?? 'International Trade';
+    final photoURL = _user?.photoURL;
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: bgColor.withOpacity(0.8), // sticky header effect
+        backgroundColor: bgColor.withOpacity(0.8),
         elevation: 0,
         leading: Builder(
           builder: (context) {
-            // Only show back button if we can pop, otherwise it's a main tab
             if (context.canPop()) {
               return IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: textColor,
-                  size: 24,
-                ),
+                icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 24),
                 onPressed: () => context.pop(),
               );
             }
             return const SizedBox.shrink();
-          },
+          }
         ),
         centerTitle: true,
         title: Text(
@@ -53,34 +168,29 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(
-          bottom: 120,
-        ), // Padding for nav bar avoidance
+        padding: const EdgeInsets.only(bottom: 120),
         child: Column(
           children: [
-            // Profile Header (Avatar + Name)
+            // Profile Header
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: [
-                  Container(
+                   Container(
                     width: 128,
                     height: 128,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                          "https://lh3.googleusercontent.com/aida-public/AB6AXuAxB4VVtHMPYketmT03FmUpnREoixZ5xhN72dF16RSirTxuD6ESSiOUeqHt-ZUtJ8h0tSHICHdGLsmS0fjPIR6zUFdNWbXwyqBQrrEEQBkcyF7aN_PsGBvWB2o_Q5zVYBkmELmiJFaL5lvIldqCmcKgwResyMUHeeXhqnlU4kf0CN3iX6pJfbnzMtQ391EZIjred9EWvldCBB2t-U86v0wXoHfgwBgdAbx05Z_yyglzp9rQizBIUoGYlT-p4A5PTjF7Ota7_Li0Lek",
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                      // Fallback color if image fails
+                      image: photoURL != null 
+                        ? DecorationImage(image: NetworkImage(photoURL), fit: BoxFit.cover)
+                        : null,
                       color: Colors.grey[300],
                     ),
+                    child: photoURL == null ? Icon(Icons.person, size: 64, color: Colors.grey[600]) : null,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Alexandra Chen',
+                    displayName,
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -90,8 +200,11 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Global Trade Corp.',
-                    style: TextStyle(fontSize: 16, color: subTextColor),
+                    companyName,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: subTextColor,
+                    ),
                   ),
                 ],
               ),
@@ -99,7 +212,7 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Personal Information Section
+            // Personal Information
             _buildSectionHeader('Personal Information', textColor),
             _buildInfoCard(
               cardColor: cardColor,
@@ -108,42 +221,44 @@ class ProfileScreen extends StatelessWidget {
                 _buildInfoRow(
                   icon: Icons.person_outline,
                   label: 'Full Name',
-                  value: 'Alexandra Chen',
+                  value: displayName,
                   primaryColor: primaryColor,
                   textColor: textColor,
                   subTextColor: subTextColor,
                   showEdit: true,
                   isLast: false,
                   borderColor: borderColor,
+                  onTap: () => _updateField('Full Name', 'displayName', displayName, isAuthProfile: true),
                 ),
-                _buildInfoRow(
+                 _buildInfoRow(
                   icon: Icons.mail_outline,
                   label: 'Email',
-                  value: 'a.chen@globaltradecorp.com',
+                  value: email,
                   primaryColor: primaryColor,
                   textColor: textColor,
                   subTextColor: subTextColor,
-                  showEdit: true,
+                  showEdit: false, // Email editing usually requires re-auth, keeping readonly for now
                   isLast: false,
                   borderColor: borderColor,
                 ),
-                _buildInfoRow(
+                 _buildInfoRow(
                   icon: Icons.phone_outlined,
                   label: 'Phone Number',
-                  value: '+1 (555) 123-4567',
+                  value: phone,
                   primaryColor: primaryColor,
                   textColor: textColor,
                   subTextColor: subTextColor,
                   showEdit: true,
                   isLast: true,
                   borderColor: borderColor,
+                  onTap: () => _updateField('Phone Number', 'phoneNumber', phone),
                 ),
               ],
             ),
 
             const SizedBox(height: 16),
 
-            // Company Information Section
+            // Company Information
             _buildSectionHeader('Company Information', textColor),
             _buildInfoCard(
               cardColor: cardColor,
@@ -152,31 +267,33 @@ class ProfileScreen extends StatelessWidget {
                 _buildInfoRow(
                   icon: Icons.apartment_outlined,
                   label: 'Company Name',
-                  value: 'Global Trade Corp.',
+                  value: companyName,
                   primaryColor: primaryColor,
                   textColor: textColor,
                   subTextColor: subTextColor,
-                  showEdit: false,
+                  showEdit: true,
                   isLast: false,
                   borderColor: borderColor,
+                  onTap: () => _updateField('Company Name', 'companyName', companyName),
                 ),
-                _buildInfoRow(
+                 _buildInfoRow(
                   icon: Icons.business_center_outlined,
                   label: 'Industry',
-                  value: 'International Trade & Finance',
+                  value: industry,
                   primaryColor: primaryColor,
                   textColor: textColor,
                   subTextColor: subTextColor,
-                  showEdit: false,
+                  showEdit: true,
                   isLast: true,
                   borderColor: borderColor,
+                  onTap: () => _updateField('Industry', 'industry', industry),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+             const SizedBox(height: 16),
 
-            // Preferences Section
+            // Preferences
             _buildSectionHeader('Preferences', textColor),
             _buildInfoCard(
               cardColor: cardColor,
@@ -190,8 +307,9 @@ class ProfileScreen extends StatelessWidget {
                   subTextColor: subTextColor,
                   isLast: false,
                   borderColor: borderColor,
+                  onTap: () => context.push('/settings'), // Redirect to Settings for toggles
                 ),
-                _buildNavRow(
+                 _buildNavRow(
                   icon: Icons.language_outlined,
                   label: 'Language',
                   value: 'English',
@@ -242,7 +360,7 @@ class ProfileScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
-          ),
+          )
         ],
       ),
       child: Column(children: children),
@@ -259,76 +377,17 @@ class ProfileScreen extends StatelessWidget {
     required bool showEdit,
     required bool isLast,
     required Color borderColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: isLast ? null : Border(bottom: BorderSide(color: borderColor)),
-      ),
-      child: Row(
-        children: [
-          // Icon Box
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: primaryColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          // Text Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: subTextColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(fontSize: 16, color: textColor, height: 1.3),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          if (showEdit)
-            Icon(Icons.edit_outlined, color: primaryColor, size: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavRow({
-    required IconData icon,
-    required String label,
-    String? value,
-    required Color primaryColor,
-    required Color textColor,
-    required Color subTextColor,
-    required bool isLast,
-    required Color borderColor,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {}, // Add navigation logic if needed
+      onTap: showEdit ? onTap : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: isLast
-              ? null
-              : Border(bottom: BorderSide(color: borderColor)),
+          border: isLast ? null : Border(bottom: BorderSide(color: borderColor)),
         ),
         child: Row(
           children: [
-            // Icon Box
             Container(
               width: 48,
               height: 48,
@@ -339,8 +398,70 @@ class ProfileScreen extends StatelessWidget {
               child: Icon(icon, color: primaryColor, size: 24),
             ),
             const SizedBox(width: 16),
-            // Text Info
-            Expanded(
+             Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: subTextColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textColor,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+             ),
+             if (showEdit)
+               Icon(Icons.edit_outlined, color: primaryColor, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+   Widget _buildNavRow({
+    required IconData icon,
+    required String label,
+    String? value,
+    required Color primaryColor,
+    required Color textColor,
+    required Color subTextColor,
+    required bool isLast,
+    required Color borderColor,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap, 
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: isLast ? null : Border(bottom: BorderSide(color: borderColor)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: primaryColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -354,14 +475,17 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   if (value != null)
-                    Text(
+                     Text(
                       value,
-                      style: TextStyle(fontSize: 14, color: subTextColor),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: subTextColor,
+                      ),
                     ),
                 ],
               ),
-            ),
-            Icon(Icons.chevron_right, color: subTextColor, size: 24),
+             ),
+             Icon(Icons.chevron_right, color: subTextColor, size: 24),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../data/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,12 +17,27 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait for minimum splash time
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Check current auth status
+    final authService = AuthService();
+    final currentUser = authService.getCurrentUser();
+
+    if (currentUser == null) {
+      // If no user, silently sign in anonymously
+      try {
+        await authService.signInAnonymously();
+      } catch (e) {
+        print("Silent Login Error: $e");
+      }
+    }
+
     if (mounted) {
-      // Navigate to login or dashboard based on auth state
-      // For now, we'll go to the initial route defined in router
-      // Navigate to onboarding for first-time flow
-      context.go('/onboarding');
+      // Always go to dashboard
+      context.go('/dashboard');
     }
   }
 

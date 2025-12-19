@@ -115,9 +115,67 @@ class AuthService {
     }
   }
 
+  Future<User?> signInAnonymously() async {
+    try {
+      final UserCredential userCredential = await _firebaseAuth.signInAnonymously();
+
+      if (userCredential.user != null) {
+        // Create a default profile for the anonymous user so the app works
+        final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+        if (!userDoc.exists) {
+           await _firestore.collection('users').doc(userCredential.user!.uid).set({
+            'email': 'guest@exportsafe.ai',
+            'displayName': 'Guest User',
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastLogin': FieldValue.serverTimestamp(),
+            'isAnonymous': true,
+          });
+          await _analytics.logLogin('anonymous');
+        } else {
+           await _firestore.collection('users').doc(userCredential.user!.uid).update({
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+      return userCredential.user;
+    } catch (e) {
+      print('Anonymous Auth Error: $e');
+       await _analytics.logError(e.toString(), 'signInAnonymously');
+      return null;
+    }
+  }
+
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
-    // await _googleSignIn.signOut();
+  }
+
+  Future<void> updateProfile({String? displayName, String? photoURL}) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      if (displayName != null) await user.updateDisplayName(displayName);
+      if (photoURL != null) await user.updatePhotoURL(photoURL);
+
+      final data = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (displayName != null) data['displayName'] = displayName;
+      if (photoURL != null) data['photoURL'] = photoURL;
+
+      await _firestore.collection('users').doc(user.uid).set(data, SetOptions(merge: true));
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _firebaseAuth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<void> updateNotificationPreference(bool isEnabled) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).set({
+        'notificationsEnabled': isEnabled,
+      }, SetOptions(merge: true));
+    }
   }
 
   User? getCurrentUser() {

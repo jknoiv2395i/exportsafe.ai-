@@ -18,20 +18,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please fill in all fields')));
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
-      final user = await _authService.signInWithEmail(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      // Direct bypass login
+      final user = await _authService.signInAnonymously();
 
       if (mounted) {
         if (user != null) {

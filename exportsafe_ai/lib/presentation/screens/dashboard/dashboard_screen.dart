@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../../core/theme/app_theme.dart';
 import 'dart:async';
+import '../audit/forensic_upload_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,8 +15,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
   late AnimationController _entranceController;
   late Animation<Offset> _headerSlideAnimation;
   late Animation<double> _headerFadeAnimation;
@@ -29,82 +31,59 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.initState();
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 1000,
-      ), // Slightly faster for punchiness
+      duration: const Duration(milliseconds: 1000), // Slightly faster for punchiness
     );
 
     // Header: Slide Down + Fade
-    _headerSlideAnimation =
-        Tween<Offset>(begin: const Offset(0, -0.2), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _entranceController,
-            curve: const Interval(
-              0.0,
-              0.6,
-              curve: Curves.easeOutBack,
-            ), // Bouncier
-          ),
-        );
-    _headerFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
+    _headerSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.2), 
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack), // Bouncier
+    ));
+    _headerFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
 
     // Grid: Slide Up + Scale + Fade (Delayed)
-    _gridSlideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0, 0.1), // Subtle slide
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _entranceController,
-            curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-          ),
-        );
-    _gridScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(
-          0.2,
-          0.8,
-          curve: Curves.easeOutBack,
-        ), // Pop effect
-      ),
-    );
-    _gridFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.2, 0.6, curve: Curves.easeOut),
-      ),
-    );
+    _gridSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1), // Subtle slide 
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+    ));
+    _gridScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.2, 0.8, curve: Curves.easeOutBack), // Pop effect
+    ));
+    _gridFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.2, 0.6, curve: Curves.easeOut),
+    ));
 
     // List: Slide Up + Scale + Fade (More Delayed)
-    _listSlideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _entranceController,
-            curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-    _listScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeOutBack),
-      ),
-    );
-    _listFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
-      ),
-    );
+    _listSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1), 
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+    ));
+    _listScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutBack),
+    ));
+    _listFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
+    ));
 
     _entranceController.forward();
   }
-
+  
   @override
   void dispose() {
     _entranceController.dispose();
@@ -138,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           // ... Circles ...
-          Positioned(
+           Positioned(
             top: -50,
             right: -50,
             child: Container(
@@ -170,7 +149,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header Row (Animated) - No scaling, just slide/fade
+                   // Header Row (Animated) - No scaling, just slide/fade
                   FadeTransition(
                     opacity: _headerFadeAnimation,
                     child: SlideTransition(
@@ -178,19 +157,26 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // ... Header Content (Greeting, Bell) ...
-                          Column(
+                           // ... Header Content (Greeting, Bell) ...
+                            Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const AnimatedGreeting(),
-                              const Text(
-                                'Alex Doe',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5,
-                                ),
+                              StreamBuilder<User?>(
+                                stream: FirebaseAuth.instance.userChanges(),
+                                builder: (context, snapshot) {
+                                  final user = snapshot.data;
+                                  final displayName = user?.displayName ?? (user?.isAnonymous == true ? 'Guest User' : 'User');
+                                  return Text(
+                                    displayName,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -204,10 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     color: Colors.white.withOpacity(0.2),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.settings_outlined,
-                                    color: Colors.white,
-                                  ),
+                                  child: const Icon(Icons.settings_outlined, color: Colors.white),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -220,10 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       color: Colors.white.withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
-                                      Icons.notifications_none_rounded,
-                                      color: Colors.white,
-                                    ),
+                                    child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
                                   ),
                                   Positioned(
                                     right: 0,
@@ -232,12 +212,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       width: 12,
                                       height: 12,
                                       decoration: BoxDecoration(
-                                        color: Colors.amber,
+                                        color: Colors.amber, 
                                         shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.red,
-                                          width: 2,
-                                        ),
+                                        border: Border.all(color: Colors.red, width: 2),
                                       ),
                                     ),
                                   ),
@@ -252,27 +229,24 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                   const SizedBox(height: 24),
 
-                  // Analyze & Audit Banner (Replaces previous module)
+                  // Forensic Audit Banner (NEW FEATURE)
                   GestureDetector(
-                    onTap: () => context.push('/analyze-documents'),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const ForensicUploadScreen()),
+                      );
+                    },
                     child: FadeTransition(
                       opacity: _gridFadeAnimation,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF0A2342),
-                              Color(0xFF2CA58D),
-                            ], // Navy to Emerald
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: AppTheme.primaryNavyBlue, // Using official App Palette
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0A2342).withOpacity(0.3),
+                              color: Colors.black.withOpacity(0.2),
                               blurRadius: 16,
                               offset: const Offset(0, 8),
                             ),
@@ -283,14 +257,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: AppTheme.secondaryEmeraldGreen.withOpacity(0.15),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.analytics_outlined,
-                                color: Colors.white,
-                                size: 28,
-                              ),
+                              child: const Icon(Icons.privacy_tip_outlined, color: AppTheme.secondaryEmeraldGreen, size: 28),
                             ),
                             const SizedBox(width: 20),
                             Expanded(
@@ -298,7 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Analyze & Audit',
+                                    'Forensic Audit AI',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -307,10 +277,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Forensic discrepancy check & reconstruction',
+                                    'Deep analysis for UCP 600 compliance',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
-                                      fontSize: 13,
+                                      color: Color(0xFF9CA3AF), // Gray 400
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
@@ -319,14 +289,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: const Color(0xFF374151), // Gray 700 (Lighter than bg)
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white,
-                                size: 16,
-                              ),
+                              child: const Icon(Icons.chevron_right, color: Colors.white, size: 20),
                             ),
                           ],
                         ),
@@ -343,324 +309,262 @@ class _DashboardScreenState extends State<DashboardScreen>
                       position: _gridSlideAnimation,
                       child: ScaleTransition(
                         scale: _gridScaleAnimation,
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Large Risk Card
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  padding: const EdgeInsets.all(24),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(32),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 24,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                        child: Consumer<DashboardProvider>(
+                          builder: (context, provider, child) {
+                            return StreamBuilder<Map<String, dynamic>>(
+                              stream: provider.dashboardStatsStream,
+                              builder: (context, snapshot) {
+                                final stats = snapshot.data ?? {'riskScore': 0, 'moneySaved': 0, 'pendingCount': 0};
+                                final riskScore = stats['riskScore'];
+                                final moneySaved = stats['moneySaved'];
+                                final pendingCount = stats['pendingCount'];
+
+                                return IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: [
-                                      // ... Icon and High Risk ...
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: primaryColor.withOpacity(
-                                                0.1,
+                                      // Large Risk Card
+                                      Expanded(
+                                        flex: 3,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(24),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(32),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.05),
+                                                blurRadius: 24,
+                                                offset: const Offset(0, 8),
                                               ),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.security,
-                                              color: primaryColor,
-                                            ),
+                                            ],
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange[50],
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              'High Risk',
-                                              style: TextStyle(
-                                                color: Colors.orange[800],
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Center(
-                                        child: Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 100,
-                                              height: 100,
-                                              child: TweenAnimationBuilder<double>(
-                                                tween: Tween<double>(
-                                                  begin: 0,
-                                                  end: 0.75,
-                                                ),
-                                                duration: const Duration(
-                                                  seconds: 2,
-                                                ),
-                                                curve: Curves.easeOutExpo,
-                                                builder: (context, value, _) =>
-                                                    CircularProgressIndicator(
-                                                      value: value,
-                                                      strokeWidth: 12,
-                                                      backgroundColor:
-                                                          Colors.grey[100],
-                                                      color: primaryColor,
-                                                      strokeCap:
-                                                          StrokeCap.round,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(10),
+                                                    decoration: BoxDecoration(
+                                                      color: primaryColor.withOpacity(0.1),
+                                                      shape: BoxShape.circle,
                                                     ),
+                                                    child: const Icon(Icons.security, color: primaryColor),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.orange[50],
+                                                      borderRadius: BorderRadius.circular(20),
+                                                    ),
+                                                    child: Text(
+                                                      'High Risk',
+                                                      style: TextStyle(
+                                                        color: Colors.orange[800],
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                            Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                TweenAnimationBuilder<double>(
-                                                  tween: Tween<double>(
-                                                    begin: 0,
-                                                    end: 75,
-                                                  ),
-                                                  duration: const Duration(
-                                                    seconds: 2,
-                                                  ),
-                                                  curve: Curves.easeOutExpo,
-                                                  builder:
-                                                      (
-                                                        context,
-                                                        value,
-                                                        _,
-                                                      ) => Text(
-                                                        '${value.toInt()}%',
-                                                        style: const TextStyle(
-                                                          fontSize: 24,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: textDark,
+                                              const SizedBox(height: 20),
+                                              Center(
+                                                child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 100,
+                                                      height: 100,
+                                                      child: TweenAnimationBuilder<double>(
+                                                        tween: Tween<double>(begin: 0, end: (riskScore as int).toDouble() / 100),
+                                                        duration: const Duration(seconds: 2),
+                                                        curve: Curves.easeOutExpo,
+                                                        builder: (context, value, _) => CircularProgressIndicator(
+                                                          value: value,
+                                                          strokeWidth: 12,
+                                                          backgroundColor: Colors.grey[100],
+                                                          color: primaryColor,
+                                                          strokeCap: StrokeCap.round,
                                                         ),
                                                       ),
+                                                    ),
+                                                    Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        TweenAnimationBuilder<double>(
+                                                          tween: Tween<double>(begin: 0, end: (riskScore).toDouble()),
+                                                          duration: const Duration(seconds: 2),
+                                                          curve: Curves.easeOutExpo,
+                                                          builder: (context, value, _) => Text(
+                                                            '${value.toInt()}%',
+                                                            style: const TextStyle(
+                                                              fontSize: 24,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: textDark,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
+                                              ),
+                                              const SizedBox(height: 16),
+                                              const Text(
+                                                'Risk Analysis',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: textDark,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Action required.',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: textMuted,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      // Stats Column
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          children: [
+                                            // Money Saved Tile
+                                            Expanded(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(20),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(32),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.05),
+                                                      blurRadius: 24,
+                                                      offset: const Offset(0, 8),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      children: [
+                                                        const Icon(Icons.savings_outlined, color: textDark, size: 28),
+                                                        Container(
+                                                          width: 8,
+                                                          height: 8,
+                                                          decoration: const BoxDecoration(
+                                                            color: Color(0xFF34C759),
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      'Saved',
+                                                      style: TextStyle(
+                                                        color: textMuted,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                    TweenAnimationBuilder<double>(
+                                                      tween: Tween<double>(begin: 0, end: (moneySaved as int).toDouble()),
+                                                      duration: const Duration(seconds: 2),
+                                                      curve: Curves.easeOutExpo,
+                                                      builder: (context, value, _) => Text(
+                                                        '₹${value.toInt()}k',
+                                                        style: const TextStyle(
+                                                          color: textDark,
+                                                          fontSize: 24,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            // Pending Audits Tile
+                                            Expanded(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(20),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(32),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.05),
+                                                      blurRadius: 24,
+                                                      offset: const Offset(0, 8),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      children: [
+                                                        const Icon(Icons.pending_actions_outlined, color: textDark, size: 28),
+                                                        Container(
+                                                          width: 8,
+                                                          height: 8,
+                                                          decoration: const BoxDecoration(
+                                                            color: primaryColor,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      'Pending',
+                                                      style: TextStyle(
+                                                        color: textMuted,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                    TweenAnimationBuilder<double>(
+                                                      tween: Tween<double>(begin: 0, end: (pendingCount as int).toDouble()),
+                                                      duration: const Duration(milliseconds: 1500),
+                                                      curve: Curves.easeOutExpo,
+                                                      builder: (context, value, _) => Text(
+                                                        '${value.toInt()} Audits',
+                                                        style: const TextStyle(
+                                                          color: textDark,
+                                                          fontSize: 18,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
                                           ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      // ... Labels ...
-                                      const Text(
-                                        'Risk Analysis',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: textDark,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Action required.',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: textMuted,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Stats Column
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  children: [
-                                    // Money Saved Tile
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            32,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.05,
-                                              ),
-                                              blurRadius: 24,
-                                              offset: const Offset(0, 8),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Icon(
-                                                  Icons.savings_outlined,
-                                                  color: textDark,
-                                                  size: 28,
-                                                ),
-                                                Container(
-                                                  width: 8,
-                                                  height: 8,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: Color(
-                                                          0xFF34C759,
-                                                        ),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                            const Spacer(),
-                                            Text(
-                                              'Saved',
-                                              style: TextStyle(
-                                                color: textMuted,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            TweenAnimationBuilder<double>(
-                                              tween: Tween<double>(
-                                                begin: 0,
-                                                end: 50,
-                                              ),
-                                              duration: const Duration(
-                                                seconds: 2,
-                                              ),
-                                              curve: Curves.easeOutExpo,
-                                              builder: (context, value, _) =>
-                                                  Text(
-                                                    '₹${value.toInt()}k',
-                                                    style: const TextStyle(
-                                                      color: textDark,
-                                                      fontSize: 24,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    // Pending Audits Tile
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            32,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.05,
-                                              ),
-                                              blurRadius: 24,
-                                              offset: const Offset(0, 8),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Icon(
-                                                  Icons
-                                                      .pending_actions_outlined,
-                                                  color: textDark,
-                                                  size: 28,
-                                                ),
-                                                Container(
-                                                  width: 8,
-                                                  height: 8,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: primaryColor,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                            const Spacer(),
-                                            Text(
-                                              'Pending',
-                                              style: TextStyle(
-                                                color: textMuted,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            TweenAnimationBuilder<double>(
-                                              tween: Tween<double>(
-                                                begin: 0,
-                                                end: 3,
-                                              ),
-                                              duration: const Duration(
-                                                milliseconds: 1500,
-                                              ),
-                                              curve: Curves.easeOutExpo,
-                                              builder: (context, value, _) =>
-                                                  Text(
-                                                    '${value.toInt()} Audits',
-                                                    style: const TextStyle(
-                                                      color: textDark,
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -676,174 +580,140 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: ScaleTransition(
                         scale: _listScaleAnimation,
                         child: Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(32),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Recent Audits',
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                             BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Recent Audits',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1D1D1F),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                     context.push('/history');
+                                  },
+                                  child: const Text(
+                                    'View All',
                                     style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1D1D1F),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFFF3B3B),
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      context.push('/history');
-                                    },
-                                    child: const Text(
-                                      'View All',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFFFF3B3B),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Real Data Stream
-                              Consumer<DashboardProvider>(
-                                builder: (context, provider, child) {
-                                  return StreamBuilder<
-                                    List<Map<String, dynamic>>
-                                  >(
-                                    stream: provider.recentAuditsStream,
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      }
-
-                                      if (!snapshot.hasData ||
-                                          snapshot.data!.isEmpty) {
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 32,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // Real Data Stream
+                            Consumer<DashboardProvider>(
+                              builder: (context, provider, child) {
+                                return StreamBuilder<List<Map<String, dynamic>>>(
+                                  stream: provider.recentAuditsStream,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator());
+                                    }
+                                    
+                                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 32),
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(20),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFF3B3B).withOpacity(0.1),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.history_toggle_off_rounded,
+                                                  size: 32,
+                                                  color: Color(0xFFFF3B3B),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              const Text(
+                                                'No Recent Activity',
+                                                style: TextStyle(
+                                                  color: Color(0xFF1D1D1F),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: -0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Your completed audits will appear here',
+                                                style: TextStyle(
+                                                  color: const Color(0xFF1D1D1F).withOpacity(0.5),
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          child: Center(
-                                            child: Column(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(
-                                                    20,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFFFF3B3B,
-                                                    ).withOpacity(0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons
-                                                        .history_toggle_off_rounded,
-                                                    size: 32,
-                                                    color: Color(0xFFFF3B3B),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 16),
-                                                const Text(
-                                                  'No Recent Activity',
-                                                  style: TextStyle(
-                                                    color: Color(0xFF1D1D1F),
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    letterSpacing: -0.5,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'Your completed audits will appear here',
-                                                  style: TextStyle(
-                                                    color: const Color(
-                                                      0xFF1D1D1F,
-                                                    ).withOpacity(0.5),
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      }
-
-                                      final audits = snapshot.data!;
-
-                                      return ListView.separated(
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        itemCount: audits.length,
-                                        separatorBuilder: (context, index) =>
-                                            const SizedBox(height: 16),
-                                        itemBuilder: (context, index) {
-                                          final audit = audits[index];
-                                          final isPass =
-                                              audit['status'] == 'PASS';
-
-                                          // Format date simply
-                                          String dateStr = '';
-                                          if (audit['createdAt'] != null) {
-                                            if (audit['createdAt']
-                                                is Timestamp) {
-                                              dateStr =
-                                                  (audit['createdAt']
-                                                          as Timestamp)
-                                                      .toDate()
-                                                      .toString()
-                                                      .split(' ')[0];
-                                            }
-                                          }
-
-                                          return _buildMinimalShipmentItem(
-                                            icon: isPass
-                                                ? Icons.check_circle_outline
-                                                : Icons.warning_amber_rounded,
-                                            title:
-                                                audit['lcFileName'] ??
-                                                'Unknown Document',
-                                            subtitle: dateStr.isNotEmpty
-                                                ? 'Audited on $dateStr'
-                                                : 'Just now',
-                                            status:
-                                                audit['status'] ?? 'UNKNOWN',
-                                            statusColor: isPass
-                                                ? Colors.green
-                                                : Colors.red,
-                                          );
-                                        },
+                                        ),
                                       );
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
+                                    }
+
+                                    final audits = snapshot.data!;
+                                    
+                                    return ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: audits.length,
+                                      separatorBuilder: (context, index) => const SizedBox(height: 16),
+                                      itemBuilder: (context, index) {
+                                        final audit = audits[index];
+                                        final isPass = audit['status'] == 'PASS';
+                                        
+                                        // Format date simply
+                                        String dateStr = '';
+                                        if (audit['createdAt'] != null) {
+                                           if (audit['createdAt'] is Timestamp) {
+                                             dateStr = (audit['createdAt'] as Timestamp).toDate().toString().split(' ')[0];
+                                           }
+                                        }
+
+                                        return _buildMinimalShipmentItem(
+                                          icon: isPass ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                                          title: audit['lcFileName'] ?? 'Unknown Document',
+                                          subtitle: dateStr.isNotEmpty ? 'Audited on $dateStr' : 'Just now',
+                                          status: audit['status'] ?? 'UNKNOWN',
+                                          statusColor: isPass ? Colors.green : Colors.red,
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-
+                ),
+                  
                   const SizedBox(height: 100), // FAB space
                 ],
               ),
@@ -859,7 +729,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     required String title,
     required String subtitle,
     required String status,
-    required MaterialColor statusColor,
+    required Color statusColor,
   }) {
     return Row(
       children: [
@@ -886,7 +756,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF86868B)),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF86868B),
+                ),
               ),
             ],
           ),
@@ -894,7 +767,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: statusColor[50],
+            // Use withOpacity for background shade since we accept generic Color
+            color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -902,7 +776,12 @@ class _DashboardScreenState extends State<DashboardScreen>
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 12,
-              color: statusColor[800],
+              // Use the color itself for text (or a darker shade if available?) 
+              // Since we can't reliably get [800] from generic Color, we just use the color 
+              // or maybe a slightly darkened version if it's too light.
+              // For status colors (Green/Red), the base color is usually readable.
+              // But original used [800]. Let's try to simulate or just use the color.
+              color: statusColor, 
             ),
           ),
         ),
@@ -960,22 +839,14 @@ class _AnimatedGreetingState extends State<AnimatedGreeting> {
           );
         },
         transitionBuilder: (Widget child, Animation<double> animation) {
-          final inAnimation = Tween<Offset>(
-            begin: const Offset(0.0, 1.0),
-            end: Offset.zero,
-          ).animate(animation);
-          final outAnimation = Tween<Offset>(
-            begin: const Offset(0.0, -1.0),
-            end: Offset.zero,
-          ).animate(animation);
+          final inAnimation = Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero).animate(animation);
+          final outAnimation = Tween<Offset>(begin: const Offset(0.0, -1.0), end: Offset.zero).animate(animation);
 
           return ClipRect(
             child: FadeTransition(
               opacity: animation,
               child: SlideTransition(
-                position: child.key == ValueKey(_greetings[_index])
-                    ? inAnimation
-                    : outAnimation,
+                position: child.key == ValueKey(_greetings[_index]) ? inAnimation : outAnimation,
                 child: child,
               ),
             ),
