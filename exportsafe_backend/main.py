@@ -566,43 +566,62 @@ async def forensic_audit(
         if gemini_api_key:
             prompt = f"{FORENSIC_AUDITOR_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
-            try:
-                # Use strict JSON generation if possible, or just prompting
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
-                payload = {
-                    "contents": [{
-                        "parts": [{"text": prompt}]
-                    }]
-                }
-                
-                response = requests.post(url, json=payload)
-                response_json = response.json()
-                
-                if "candidates" in response_json and response_json["candidates"]:
-                    clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
+            # Robust Retry Logic
+            models_to_try = ['gemini-1.5-flash']
+            import time
+            
+            for model_name in models_to_try:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
+                    payload = {
+                        "contents": [{
+                            "parts": [{"text": prompt}]
+                        }],
+                         "generationConfig": {
+                            "response_mime_type": "application/json"
+                        }
+                    }
                     
-                    # Cleanup markdown
-                    if "```json" in clean_json:
-                        clean_json = clean_json.split("```json")[1].split("```")[0].strip()
-                    elif "```" in clean_json:
-                        clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                    print(f"Forensic Auditor Requesting {model_name}...")
+                    response = requests.post(url, json=payload)
+                    response_json = response.json()
+                    
+                    if "candidates" in response_json and response_json["candidates"]:
+                        clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
                         
-                    data = json.loads(clean_json)
-                    return data
-                else:
-                    raise Exception(f"API Error: {response_json}")
+                        # Cleanup markdown
+                        if "```json" in clean_json:
+                            clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                        elif "```" in clean_json:
+                            clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                            
+                        data = json.loads(clean_json)
+                        return data
+                    else:
+                        print(f"API Error with {model_name}: {response_json}")
+                        # Check for specific errors
+                        if "error" in response_json:
+                             err_msg = str(response_json["error"]).lower()
+                             if "quota" in err_msg or "429" in err_msg or "resource exhausted" in err_msg:
+                                 time.sleep(2)
+                                 continue
+                        continue
 
-            except Exception as e:
-                print(f"AI Forensic Audit Failed: {e}")
-                # Fallback / Error
-                return {
-                    "status": "CRITICAL_FAIL",
-                    "risk_score": 100,
-                    "summary": "AI Audit process failed due to server error.",
-                    "corrected_lc_data": {},
-                    "discrepancies": [],
-                    "refined_lc_text": "Error generating report."
-                }
+                except Exception as e:
+                    print(f"Model {model_name} failed: {e}")
+                    time.sleep(1)
+                    continue
+
+            # If all fail
+            print("All AI Forensic models failed.")
+            return {
+                "status": "CRITICAL_FAIL",
+                "risk_score": 100,
+                "summary": "AI Audit process failed due to server error (All Retries Failed).",
+                "corrected_lc_data": {},
+                "discrepancies": [],
+                "refined_lc_text": "Error generating report."
+            }
         else:
              return {
                 "status": "WARNING",
