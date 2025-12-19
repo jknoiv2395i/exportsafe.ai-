@@ -143,7 +143,7 @@ async def audit_documents(
             prompt = f"{JOHNSON_SYSTEM_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
             # Retry Loop with Fallback
-            models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash']
+            models_to_try = ['gemini-1.5-flash']
             response_text = ""
             
             import time
@@ -406,7 +406,7 @@ async def generate_lc(
         # 2. Construct AI Prompt
         final_prompt = LC_GENERATOR_SYSTEM_PROMPT.format(route_type=route_type) + f"\n\nEXTRACTED DATA FROM DOCUMENTS:\n{combined_text}"
 
-        models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash']
+        models_to_try = ['gemini-1.5-flash']
         
         for model_name in models_to_try:
             try:

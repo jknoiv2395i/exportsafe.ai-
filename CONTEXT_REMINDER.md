@@ -10540,3 +10540,34 @@ For issues or questions:
 - **URL**: https://exportsafe-ai-1.onrender.com (Render).
 - **Note**: App now functions globally without local Python server.
 
+
+### [2025-12-16] UX Enhancements & Auth Bypass
+- **Audit History**: Implemented `AuditHistoryScreen` to view past audits, linked from Dashboard.
+- **Empty State**: Updated Dashboard "Recent Activity" empty state (Themed "No recent activity" icon).
+- **Authentication**:
+    - **Bypass**: Removed Login/Signup screens from initial flow.
+    - **Silent Login**: `SplashScreen` now automatically signs users in as "Guest" (`signInAnonymously`) and redirects to Dashboard.
+    - **Backend**: Added `signInAnonymously` to `AuthService` to create valid guest user profiles in Firestore.
+- **Landing Page**:
+    - **PRD**: Created `landing_page_prd.md` with full design system (Navy/Green/Red palette).
+    - **Content**: Created `landing_page_content_map.md` mapping "Boltzshift" template to ExportSafe branding.
+- **Stability**: Fixed `snapshot.hasData` checks and `intl` package dependency.
+1. Functional Settings ⚙️
+The 
+SettingsScreen
+ UI is built, but the buttons don't do anything yet:
+
+ Edit Profile: Connect to Firebase to update name/photo.
+ Change Password: Implement Firebase password reset.
+ Notifications: Connect to a real notification system.
+2. Real Data on Dashboard 📊
+The "Recent Activity" list is real (connected to Firestore).
+BUT the Bento Grid stats (Risk Score 75%, Money Saved ₹50k) are currently hardcoded animations. We need to connect these to real aggregations in Firestore.
+3. Payment Integration 💳
+ There is a "Manage Subscription" button, but no payment gateway (Stripe/Razorpay) is connected.
+4. Web Landing Page 🌐
+ I created the PRD & Content for the landing page.
+ Remaining: We need to actually code the website (HTML/React) to replace the standard Flutter web entry point.
+5. Re-Secure Authentication 🔐
+ (For Launch) Remove the "Guest Bypass" and restore the secure Login/Signup flow.
+ 

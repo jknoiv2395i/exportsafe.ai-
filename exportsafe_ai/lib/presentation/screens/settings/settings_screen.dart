@@ -482,18 +482,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Icon(icon, color: primaryColor, size: 20),
           ),
           title: Text(title, style: TextStyle(color: textColor, fontSize: 15)),
-          trailing:
-              trailing ?? Icon(Icons.chevron_right, color: Colors.grey[400]),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
-          ),
-<<<<<<< HEAD
-=======
           subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])) : null,
           trailing: trailing ?? Icon(Icons.chevron_right, color: Colors.grey[400]),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
->>>>>>> c469d55 (feat(dashboard): Real-time Stats & Forensic UI Sync)
         ),
         if (!isLast)
           Divider(

@@ -68,15 +68,9 @@ class AuditHistoryScreen extends StatelessWidget {
                 final docs = snapshot.data!.docs;
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-<<<<<<< HEAD
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = snapshot.data!.docs[index];
-=======
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final doc = docs[index];
->>>>>>> cf7180af4ce406468d61dc191aa9a883f803abef
                     final data = doc.data() as Map<String, dynamic>;
                     final isPass = data['status'] == 'PASS';
                     final date = (data['createdAt'] as Timestamp?)?.toDate();
