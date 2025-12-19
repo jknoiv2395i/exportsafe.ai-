@@ -75,10 +75,12 @@ class AuthService {
 
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
-      throw e.message ?? "An unknown error occurred";
+      throw "Firebase Error (${e.code}): ${e.message}";
     } catch (e) {
-      await _analytics.logError(e.toString(), 'signInWithEmail');
-      throw "An error occurred: $e";
+      try {
+        await _analytics.logError(e.toString(), 'signInWithEmail');
+      } catch (_) {}
+      throw "Login Failed: $e";
     }
   }
 
@@ -107,8 +109,10 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw e.message ?? "An unknown error occurred";
     } catch (e) {
-      await _analytics.logError(e.toString(), 'signUpWithEmail');
-      throw "An error occurred: $e";
+      try {
+        await _analytics.logError(e.toString(), 'signUpWithEmail');
+      } catch (_) {}
+      throw "Signup Failed: $e";
     }
   }
 

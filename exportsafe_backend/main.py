@@ -8,7 +8,7 @@ from typing import Optional, List
 from dotenv import load_dotenv
 import shutil
 import tempfile
-import google.generativeai as genai
+import requests
 
 # Optional: LlamaParse (has compatibility issues with Python 3.14)
 try:
@@ -34,12 +34,7 @@ app.add_middleware(
 
 # Initialize Google Gemini
 gemini_api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
-if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
-    # Using gemini-2.0-flash as it is available in the user's account
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    gemini_model = None
+if not gemini_api_key:
     print("Warning: GOOGLE_GEMINI_API_KEY not found")
 
 # Johnson Protocol System Prompt
@@ -144,7 +139,7 @@ async def audit_documents(
         # 2. Send to AI (Johnson Protocol)
         response_text = ""
         
-        if gemini_model:
+        if gemini_api_key:
             prompt = f"{JOHNSON_SYSTEM_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
             # Retry Loop with Fallback
@@ -155,11 +150,24 @@ async def audit_documents(
             
             for model_name in models_to_try:
                 try:
-                    print(f"Trying AI Model: {model_name}...")
-                    current_model = genai.GenerativeModel(model_name)
-                    response = current_model.generate_content(prompt)
-                    response_text = response.text
-                    break # Success!
+                    print(f"Trying AI Model (REST): {model_name}...")
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
+                    payload = {
+                        "contents": [{
+                            "parts": [{"text": prompt}]
+                        }]
+                    }
+                    
+                    response = requests.post(url, json=payload)
+                    response_json = response.json()
+                    
+                    if "candidates" in response_json and response_json["candidates"]:
+                        response_text = response_json["candidates"][0]["content"]["parts"][0]["text"]
+                        break # Success!
+                    else:
+                        print(f"API Error with {model_name}: {response_json}")
+                        continue
+
                 except Exception as e:
                     error_str = str(e).lower()
                     if "quota" in error_str or "429" in error_str or "resource exhausted" in error_str:
@@ -555,22 +563,34 @@ async def forensic_audit(
              raise HTTPException(status_code=500, detail="Failed to extract text from documents")
 
         # 2. Send to AI
-        if gemini_model:
+        if gemini_api_key:
             prompt = f"{FORENSIC_AUDITOR_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
             try:
                 # Use strict JSON generation if possible, or just prompting
-                response = gemini_model.generate_content(prompt)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
+                payload = {
+                    "contents": [{
+                        "parts": [{"text": prompt}]
+                    }]
+                }
                 
-                clean_json = response.text
-                # Cleanup markdown
-                if "```json" in clean_json:
-                    clean_json = clean_json.split("```json")[1].split("```")[0].strip()
-                elif "```" in clean_json:
-                    clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                response = requests.post(url, json=payload)
+                response_json = response.json()
+                
+                if "candidates" in response_json and response_json["candidates"]:
+                    clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
                     
-                data = json.loads(clean_json)
-                return data
+                    # Cleanup markdown
+                    if "```json" in clean_json:
+                        clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                    elif "```" in clean_json:
+                        clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                        
+                    data = json.loads(clean_json)
+                    return data
+                else:
+                    raise Exception(f"API Error: {response_json}")
 
             except Exception as e:
                 print(f"AI Forensic Audit Failed: {e}")
@@ -596,9 +616,139 @@ async def forensic_audit(
                 "refined_lc_text": "Demo text only."
             }
 
+
+# Analyze & Audit System Prompt
     except Exception as e:
         print(f"Error in forensic audit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Analyze & Audit System Prompt ("DLML Algorithm")
+ANALYZE_DOCUMENTS_PROMPT = """
+### SYSTEM IDENTITY
+**Identity:** DLML-v9 (Deep Language Machine Learning) Forensic Engine.
+**Module:** Trade Finance "Crack" Detection & Reconstruction.
+**Objective:** Execute the "Perfect Audit" protocol to identify micro-discrepancies, logical cracks, and compliance voids in Trade Finance documents (LC vs Invoice/BL).
+
+### ALGORITHMIC PROTOCOL
+1.  **VECTOR SCAN (Visual & Textual):**
+    *   Ingest the raw visual patterns of the LC and Subject Document.
+    *   Detect OCR artifacts (e.g., `l` vs `1`, `0` vs `O`).
+    *   **CRITICAL STEP:** Fix all OCR errors in memory before analysis.
+
+2.  **SEMANTIC DIFFERENTIAL ANALYSIS ("Crack Finding"):**
+    *   Compare `LC.Beneficiary` vs `Invoice.Beneficiary`. (Exact string match required).
+    *   Compare `LC.Amount` vs `Invoice.Total`. (Math verification).
+    *   Compare `LC.Port` vs `BL.Port`.
+    *   **Logic Check:** `Shipment Date` <= `Expiry Date`. If not, flag as logical crack.
+    *   **Spelling Engine:** Detect subtle typos (e.g., "Shippment" -> "Shipment").
+
+3.  **RECONSTRUCTION (The Fix):**
+    *   Generate `refined_lc_text`: The mathematically perfect, grammatically correct, UCP-600 compliant version of the LC.
+    *   **Rule:** If a discrepancy exists, the `refined_lc_text` MUST contain the *corrected* version that aligns with the Invoice/BL (assuming Invoice is true) OR makes the LC consistent with itself.
+
+4.  **REPORT GENERATION:**
+    *   Construct a `bank_ready_report` that is polite but firm, citing UCP 600 articles where applicable.
+
+### OUTPUT JSON (STRICT)
+{{
+  "status": "FAIL" | "PASS",
+  "risk_score": 0-100,
+  "discrepancies": [
+    {{
+      "field": "Field Name", 
+      "original_text": "Exact text from document", 
+      "corrected_value": "The DLML corrected value", 
+      "explanation": "Technical explanation of the crack/discrepancy (e.g., 'Typographic divergence detected').", 
+      "severity": "CRITICAL" | "MAJOR" | "MINOR"
+    }}
+  ],
+  "refined_lc_text": "The full, perfect LC text...",
+  "bank_ready_report": {{
+      "subject": "Discrepancy Notice: LC-[Number]", 
+      "body_text": "Dear Trade Finance Officer,\\n\\nOur DLML Forensic Audit has detected the following irregularities..." 
+  }}
+}}
+"""
+
+@app.post("/analyze-documents")
+async def analyze_documents(
+    lc_file: UploadFile = File(...),
+    subject_file: UploadFile = File(...)
+):
+    try:
+        # 1. Extract Text
+        lc_text = await extract_text_from_pdf(lc_file)
+        subject_text = await extract_text_from_pdf(subject_file)
+
+        if not lc_text or not subject_text:
+             raise HTTPException(status_code=500, detail="Failed to extract text from documents")
+
+        # 2. Send to AI
+        if gemini_api_key:
+            prompt = f"{ANALYZE_DOCUMENTS_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\n--- AUTHORITY DOCUMENT (LC) ---\n{lc_text}\n\n--- SUBJECT DOCUMENT (Invoice/BL) ---\n{subject_text}"
+            
+            try:
+                # Use gemini-1.5-flash for speed/efficiency
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
+                payload = {
+                    "contents": [{
+                        "parts": [{"text": prompt}]
+                    }],
+                    "generationConfig": {
+                        "response_mime_type": "application/json"
+                    }
+                }
+                
+                response = requests.post(url, json=payload)
+                response_json = response.json()
+                
+                if "candidates" in response_json and response_json["candidates"]:
+                    clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
+                    
+                    # Cleanup markdown if still present despite mime_type
+                    if "```json" in clean_json:
+                        clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                    elif "```" in clean_json:
+                        clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                        
+                    return json.loads(clean_json)
+                else:
+                    raise Exception(f"API Error: {response_json}")
+
+            except Exception as e:
+                print(f"Analyze Audit Failed: {e}")
+                return {
+                    "status": "FAIL",
+                    "risk_score": 100,
+                    "discrepancies": [{"field": "System", "original_text": "N/A", "corrected_value": "N/A", "explanation": f"AI Error: {str(e)}", "severity": "CRITICAL"}],
+                    "refined_lc_text": "Analysis disrupted.",
+                    "bank_ready_report": {"subject": "System Error", "body_text": "Could not complete analysis."}
+                }
+        else:
+             # Mock Response
+             return {
+                "status": "FAIL",
+                "risk_score": 75,
+                "discrepancies": [
+                    {
+                        "field": "Beneficiary Name", 
+                        "original_text": "ExpotSafe Ltd", 
+                        "corrected_value": "ExportSafe Ltd", 
+                        "explanation": "Spelling error in beneficiary name.", 
+                        "severity": "CRITICAL"
+                    }
+                ],
+                "refined_lc_text": "This is a demo refined LC text because no API Key was found.",
+                "bank_ready_report": { 
+                    "subject": "Discrepancy Note - Import LC 123456", 
+                    "body_text": "Dear Bank,\\n\\nPlease find attached the corrected documents..." 
+                }
+            }
+
+    except Exception as e:
+        print(f"Error in analyze documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -16,7 +16,10 @@ class AuditHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Audit History',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1D1D1F)),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1D1D1F),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -39,16 +42,23 @@ class AuditHistoryScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (!snapshot.hasData || snapshot.docs.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.history_toggle_off, size: 64, color: Colors.grey[400]),
+                        Icon(
+                          Icons.history_toggle_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No audits found',
-                          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
@@ -57,17 +67,21 @@ class AuditHistoryScreen extends StatelessWidget {
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: snapshot.docs.length,
+                  itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
-                    final doc = snapshot.docs[index];
+                    final doc = snapshot.data!.docs[index];
                     final data = doc.data() as Map<String, dynamic>;
                     final isPass = data['status'] == 'PASS';
                     final date = (data['createdAt'] as Timestamp?)?.toDate();
-                    final formattedDate = date != null ? DateFormat('MMM d, yyyy • h:mm a').format(date) : 'Unknown';
+                    final formattedDate = date != null
+                        ? DateFormat('MMM d, yyyy • h:mm a').format(date)
+                        : 'Unknown';
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                       color: Colors.white,
                       child: InkWell(
@@ -80,11 +94,15 @@ class AuditHistoryScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isPass ? Colors.green[50] : Colors.red[50],
+                                  color: isPass
+                                      ? Colors.green[50]
+                                      : Colors.red[50],
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  isPass ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                                  isPass
+                                      ? Icons.check_circle_outline
+                                      : Icons.warning_amber_rounded,
                                   color: isPass ? Colors.green : Colors.red,
                                 ),
                               ),
@@ -115,9 +133,14 @@ class AuditHistoryScreen extends StatelessWidget {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isPass ? Colors.green[50] : Colors.red[50],
+                                  color: isPass
+                                      ? Colors.green[50]
+                                      : Colors.red[50],
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -125,7 +148,9 @@ class AuditHistoryScreen extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: isPass ? Colors.green[700] : Colors.red[700],
+                                    color: isPass
+                                        ? Colors.green[700]
+                                        : Colors.red[700],
                                   ),
                                 ),
                               ),
