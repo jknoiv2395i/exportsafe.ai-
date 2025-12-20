@@ -33,7 +33,18 @@ app.add_middleware(
 )
 
 # Initialize Google Gemini
-gemini_api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
+gemini_api_key = "AIzaSyDQsY2baNM4XZXlKVQqtJ_VPLR2FLdwEso"
+
+# Configure Google Generative AI SDK
+try:
+    import google.generativeai as genai
+    genai.configure(api_key=gemini_api_key)
+    GENAI_AVAILABLE = True
+    print("Google Generative AI SDK configured successfully")
+except Exception as e:
+    print(f"Google Generative AI SDK not available: {e}")
+    GENAI_AVAILABLE = False
+
 if not gemini_api_key:
     print("Warning: GOOGLE_GEMINI_API_KEY not found")
 
@@ -142,8 +153,8 @@ async def audit_documents(
         if gemini_api_key:
             prompt = f"{JOHNSON_SYSTEM_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
-            # Retry Loop with Fallback
-            models_to_try = ['gemini-1.5-flash']
+            # Retry Loop with Fallback - Use models that are available
+            models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
             response_text = ""
             
             import time
@@ -406,7 +417,7 @@ async def generate_lc(
         # 2. Construct AI Prompt
         final_prompt = LC_GENERATOR_SYSTEM_PROMPT.format(route_type=route_type) + f"\n\nEXTRACTED DATA FROM DOCUMENTS:\n{combined_text}"
 
-        models_to_try = ['gemini-1.5-flash']
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
         
         for model_name in models_to_try:
             try:
@@ -563,31 +574,22 @@ async def forensic_audit(
              raise HTTPException(status_code=500, detail="Failed to extract text from documents")
 
         # 2. Send to AI
-        if gemini_api_key:
+        if GENAI_AVAILABLE:
             prompt = f"{FORENSIC_AUDITOR_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
             
-            # Robust Retry Logic
-            models_to_try = ['gemini-1.5-flash']
-            import time
+            # Try with Google Generative AI SDK - Use models that are actually available
+            models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
             
             for model_name in models_to_try:
                 try:
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
-                    payload = {
-                        "contents": [{
-                            "parts": [{"text": prompt}]
-                        }],
-                         "generationConfig": {
-                            "response_mime_type": "application/json"
-                        }
-                    }
+                    print(f"Forensic Auditor using SDK - Model: {model_name}...")
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
                     
-                    print(f"Forensic Auditor Requesting {model_name}...")
-                    response = requests.post(url, json=payload)
-                    response_json = response.json()
+                    print(f"SDK Response received: {response.text[:200] if response.text else 'Empty'}...")
                     
-                    if "candidates" in response_json and response_json["candidates"]:
-                        clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
+                    if response.text:
+                        clean_json = response.text
                         
                         # Cleanup markdown
                         if "```json" in clean_json:
@@ -598,26 +600,21 @@ async def forensic_audit(
                         data = json.loads(clean_json)
                         return data
                     else:
-                        print(f"API Error with {model_name}: {response_json}")
-                        # Check for specific errors
-                        if "error" in response_json:
-                             err_msg = str(response_json["error"]).lower()
-                             if "quota" in err_msg or "429" in err_msg or "resource exhausted" in err_msg:
-                                 time.sleep(2)
-                                 continue
+                        print(f"Empty response from {model_name}")
                         continue
 
                 except Exception as e:
-                    print(f"Model {model_name} failed: {e}")
+                    print(f"SDK Model {model_name} failed: {e}")
+                    import time
                     time.sleep(1)
                     continue
 
             # If all fail
-            print("All AI Forensic models failed.")
+            print("All AI Forensic models failed (SDK).")
             return {
                 "status": "CRITICAL_FAIL",
                 "risk_score": 100,
-                "summary": "AI Audit process failed due to server error (All Retries Failed).",
+                "summary": "AI Audit process failed - SDK models unavailable.",
                 "corrected_lc_data": {},
                 "discrepancies": [],
                 "refined_lc_text": "Error generating report."
@@ -706,43 +703,54 @@ async def analyze_documents(
         if gemini_api_key:
             prompt = f"{ANALYZE_DOCUMENTS_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\n--- AUTHORITY DOCUMENT (LC) ---\n{lc_text}\n\n--- SUBJECT DOCUMENT (Invoice/BL) ---\n{subject_text}"
             
-            try:
-                # Use gemini-1.5-flash for speed/efficiency
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
-                payload = {
-                    "contents": [{
-                        "parts": [{"text": prompt}]
-                    }],
-                    "generationConfig": {
-                        "response_mime_type": "application/json"
+            # Robust Retry Logic - Try multiple model names  
+            import time
+            models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
+            
+            for model_name in models_to_try:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
+                    payload = {
+                        "contents": [{
+                            "parts": [{"text": prompt}]
+                        }],
+                        "generationConfig": {
+                            "response_mime_type": "application/json"
+                        }
                     }
-                }
-                
-                response = requests.post(url, json=payload)
-                response_json = response.json()
-                
-                if "candidates" in response_json and response_json["candidates"]:
-                    clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
                     
-                    # Cleanup markdown if still present despite mime_type
-                    if "```json" in clean_json:
-                        clean_json = clean_json.split("```json")[1].split("```")[0].strip()
-                    elif "```" in clean_json:
-                        clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                    print(f"Analyze Documents Requesting {model_name}...")
+                    response = requests.post(url, json=payload)
+                    response_json = response.json()
+                    
+                    if "candidates" in response_json and response_json["candidates"]:
+                        clean_json = response_json["candidates"][0]["content"]["parts"][0]["text"]
                         
-                    return json.loads(clean_json)
-                else:
-                    raise Exception(f"API Error: {response_json}")
+                        # Cleanup markdown if still present despite mime_type
+                        if "```json" in clean_json:
+                            clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                        elif "```" in clean_json:
+                            clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                            
+                        return json.loads(clean_json)
+                    else:
+                        print(f"API Error with {model_name}: {response_json}")
+                        continue
 
-            except Exception as e:
-                print(f"Analyze Audit Failed: {e}")
-                return {
-                    "status": "FAIL",
-                    "risk_score": 100,
-                    "discrepancies": [{"field": "System", "original_text": "N/A", "corrected_value": "N/A", "explanation": f"AI Error: {str(e)}", "severity": "CRITICAL"}],
-                    "refined_lc_text": "Analysis disrupted.",
-                    "bank_ready_report": {"subject": "System Error", "body_text": "Could not complete analysis."}
-                }
+                except Exception as e:
+                    print(f"Model {model_name} failed: {e}")
+                    time.sleep(1)
+                    continue
+            
+            # If all models fail
+            print("All Analyze models failed.")
+            return {
+                "status": "FAIL",
+                "risk_score": 100,
+                "discrepancies": [{"field": "System", "original_text": "N/A", "corrected_value": "N/A", "explanation": "AI Error: All models failed", "severity": "CRITICAL"}],
+                "refined_lc_text": "Analysis disrupted.",
+                "bank_ready_report": {"subject": "System Error", "body_text": "Could not complete analysis."}
+            }
         else:
              # Mock Response
              return {
@@ -766,6 +774,123 @@ async def analyze_documents(
 
     except Exception as e:
         print(f"Error in analyze documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# =============================================
+# FORENSIC AUDIT ENDPOINT  
+# =============================================
+FORENSIC_AUDITOR_PROMPT = """You are an expert AI forensic auditor specializing in trade finance. Analyze the provided Letter of Credit (LC) and Commercial Invoice for discrepancies.
+
+Return your analysis as a JSON object with this exact structure:
+{
+  "status": "PASS" or "CRITICAL_FAIL",
+  "risk_score": 0-100,
+  "summary": "Brief summary of findings",
+  "corrected_lc_data": {},
+  "discrepancies": [
+    {
+      "field": "Name of the field with issue",
+      "original_text": "The original value found in the document",
+      "corrected_value": "Suggested correction",
+      "issue_type": "TYPO|UCP_VIOLATION|MISSING|MISMATCH",
+      "severity": "HIGH|MEDIUM|LOW",
+      "explanation": "Why this is an issue"
+    }
+  ],
+  "refined_lc_text": "A properly formatted letter document with line breaks (use \\n for new lines)"
+}
+
+IMPORTANT for refined_lc_text:
+Format it as a formal trade finance letter with proper structure:
+- Start with "DOCUMENTARY LETTER OF CREDIT" as header
+- Include sections: LC Number, Date, Beneficiary, Amount, etc.
+- Use line breaks (\\n) between sections  
+- Make it look like an official bank document
+
+Check for:
+- UCP 600 compliance (shipping dates, document presentation deadlines)
+- ISBP 745 standards
+- Incoterms consistency
+- Amount and currency matches
+- Party name accuracy
+- Document dates and references
+"""
+
+@app.post("/forensic-audit")
+async def forensic_audit(
+    lc_file: UploadFile = File(...),
+    invoice_file: UploadFile = File(...)
+):
+    try:
+        # 1. Extract Text from documents
+        lc_text = await extract_text_from_pdf(lc_file)
+        invoice_text = await extract_text_from_pdf(invoice_file)
+        
+        if not lc_text or not invoice_text:
+            raise HTTPException(status_code=500, detail="Failed to extract text from documents")
+
+        # 2. Send to AI using SDK
+        if GENAI_AVAILABLE:
+            prompt = f"{FORENSIC_AUDITOR_PROMPT}\n\nANALYZE THESE DOCUMENTS:\n\nLetter of Credit Content:\n{lc_text}\n\nCommercial Invoice Content:\n{invoice_text}"
+            
+            # Use models that work with this API key
+            models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+            
+            for model_name in models_to_try:
+                try:
+                    print(f"Forensic Auditor using SDK - Model: {model_name}...")
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                    
+                    print(f"SDK Response received: {response.text[:200] if response.text else 'Empty'}...")
+                    
+                    if response.text:
+                        clean_json = response.text
+                        
+                        # Cleanup markdown if present
+                        if "```json" in clean_json:
+                            clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                        elif "```" in clean_json:
+                            clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                            
+                        data = json.loads(clean_json)
+                        print(f"Forensic Audit SUCCESS with {model_name}")
+                        return data
+                    else:
+                        print(f"Empty response from {model_name}")
+                        continue
+
+                except Exception as e:
+                    print(f"Forensic Model {model_name} failed: {e}")
+                    import time
+                    time.sleep(1)
+                    continue
+
+            # If all models fail
+            print("All Forensic AI models failed (SDK).")
+            return {
+                "status": "CRITICAL_FAIL",
+                "risk_score": 100,
+                "summary": "AI Audit process failed - SDK models unavailable.",
+                "corrected_lc_data": {},
+                "discrepancies": [],
+                "refined_lc_text": "Error generating report."
+            }
+        else:
+            # No SDK - return mock
+            return {
+                "status": "PASS",
+                "risk_score": 25,
+                "summary": "Demo mode - SDK not configured",
+                "corrected_lc_data": {},
+                "discrepancies": [],
+                "refined_lc_text": "Demo response"
+            }
+
+    except Exception as e:
+        print(f"Forensic Audit Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

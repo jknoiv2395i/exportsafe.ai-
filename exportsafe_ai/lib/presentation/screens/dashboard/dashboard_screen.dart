@@ -229,7 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
                   const SizedBox(height: 24),
 
-                  // Forensic Audit Banner (NEW FEATURE)
+                  // Forensic Audit Banner (NEW FEATURE) - BRAND COLORS
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
@@ -242,12 +242,24 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryNavyBlue, // Using official App Palette
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white,
+                              Color(0xFFFFF0F0), // Subtle pink/red tone
+                              Color(0xFFFFE5E5), // Pale red
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFFFF3B3B).withOpacity(0.15),
+                            width: 1,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 16,
+                              color: const Color(0xFFFF3B3B).withOpacity(0.12),
+                              blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
                           ],
@@ -256,30 +268,32 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.secondaryEmeraldGreen.withOpacity(0.15),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFFFF3B3B), Color(0xFFFF6B6B)],
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.privacy_tip_outlined, color: AppTheme.secondaryEmeraldGreen, size: 28),
+                              child: const Icon(Icons.shield_outlined, color: Colors.white, size: 28),
                             ),
                             const SizedBox(width: 20),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
+                                children: const [
+                                  Text(
                                     'Forensic Audit AI',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFF1D1D1F), // Dark text
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4),
                                   Text(
                                     'Deep analysis for UCP 600 compliance',
                                     style: TextStyle(
-                                      color: Color(0xFF9CA3AF), // Gray 400
+                                      color: Color(0xFF86868B), // Muted text
                                       fontSize: 14,
                                     ),
                                   ),
@@ -289,10 +303,10 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF374151), // Gray 700 (Lighter than bg)
+                                color: const Color(0xFFFF3B3B).withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+                              child: const Icon(Icons.chevron_right, color: Color(0xFFFF3B3B), size: 20),
                             ),
                           ],
                         ),

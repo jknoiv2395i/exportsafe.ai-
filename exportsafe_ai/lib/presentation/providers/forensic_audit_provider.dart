@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../data/datasources/remote/forensic_api_service.dart';
 import '../../data/models/forensic_audit_report.dart';
-import '../screens/audit/forensic_audit_screen.dart';
+import '../screens/audit/forensic_scan_screen.dart';
 
 class ForensicAuditProvider extends ChangeNotifier {
   final ForensicApiService _apiService = ForensicApiService();
@@ -58,29 +58,29 @@ class ForensicAuditProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    // Navigate to scanning screen with the analysis function
+    if (context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ForensicScanScreen(
+            runAnalysis: () => _performAnalysis(),
+          ),
+        ),
+      );
+    }
+
+    _isProcessing = false;
+    notifyListeners();
+  }
+
+  Future<ForensicAuditReport> _performAnalysis() async {
     try {
       final report = await _apiService.auditDocuments(_lcFile!, _invoiceFile!);
       _report = report;
-      _isProcessing = false;
-      notifyListeners();
-
-      if (context.mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ForensicAuditScreen(report: report),
-          ),
-        );
-      }
+      return report;
     } catch (e) {
-      _isProcessing = false;
       _error = e.toString();
-      notifyListeners();
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
+      rethrow;
     }
   }
 }
